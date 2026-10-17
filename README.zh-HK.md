@@ -4,20 +4,20 @@
 
 <strong>在 tmux 狀態列顯示目前的 Kubernetes 上下文及命名空間，毋須 kubectl，直接解析 kubeconfig。</strong>
 
-[English](README.md) &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; 繁體中文（香港）
+[English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | 繁體中文（香港）
 
 [![Tests](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
 
 <p align="center">
-  <a href="#功能">功能</a> &nbsp;|&nbsp;
-  <a href="#系統要求">系統要求</a> &nbsp;|&nbsp;
-  <a href="#安裝">安裝</a> &nbsp;|&nbsp;
-  <a href="#用法">用法</a> &nbsp;|&nbsp;
-  <a href="#設定">設定</a> &nbsp;|&nbsp;
-  <a href="#按鍵綁定">按鍵綁定</a> &nbsp;|&nbsp;
-  <a href="#運作原理">運作原理</a> &nbsp;|&nbsp;
+  <a href="#功能">功能</a> |
+  <a href="#系統要求">系統要求</a> |
+  <a href="#安裝">安裝</a> |
+  <a href="#用法">用法</a> |
+  <a href="#設定">設定</a> |
+  <a href="#按鍵綁定">按鍵綁定</a> |
+  <a href="#運作原理">運作原理</a> |
   <a href="#開發">開發</a>
 </p>
 
