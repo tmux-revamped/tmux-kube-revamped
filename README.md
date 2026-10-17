@@ -1,128 +1,187 @@
 <div align="center">
 
-<h1>tmux-kube-revamped</h1>
+# tmux-kube-revamped
 
-**Current Kubernetes context and namespace in your tmux status bar, async, kubectl-free, never blocking.**
+<strong>Current Kubernetes context and namespace in the tmux status bar, parsed from kubeconfig without kubectl.</strong>
 
-[![Tests](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
+
+[![Tests](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+
+<p align="center">
+  <a href="#what-it-does">What it does</a> &nbsp;|&nbsp;
+  <a href="#requirements">Requirements</a> &nbsp;|&nbsp;
+  <a href="#installation">Installation</a> &nbsp;|&nbsp;
+  <a href="#usage">Usage</a> &nbsp;|&nbsp;
+  <a href="#configuration">Configuration</a> &nbsp;|&nbsp;
+  <a href="#key-bindings">Key bindings</a> &nbsp;|&nbsp;
+  <a href="#how-it-works">How it works</a> &nbsp;|&nbsp;
+  <a href="#development">Development</a>
+</p>
 
 </div>
 
-**3** placeholders · **2** switchers · **k9s popup** · **no kubectl required** · **tmux 3.2+** · **95%+** coverage
+**3** status placeholders, **2** switcher menus and a k9s popup, and the default segment never starts kubectl.
 
-Shows the active Kubernetes context and namespace, read straight from your kubeconfig. It parses `~/.kube/config` directly, so it works without `kubectl` installed and never forks a process on the hot path. The read runs in a detached background worker and the result is cached in tmux server options, so the status line never waits, and no temp file is ever written.
+---
 
-Built from [tmux-plugin-template](https://github.com/tmux-revamped/tmux-plugin-template).
+## What it does
 
-<table>
-<tr>
-<td><strong>kubectl-free</strong><br>Reads the kubeconfig directly. No <code>kubectl</code> fork on every render, no Go process spinup.</td>
-<td><strong>Never blocks</strong><br>A background worker refreshes the cache; the render reads it instantly.</td>
-</tr>
-<tr>
-<td><strong>No temp files</strong><br>State lives in tmux server options, nothing to clean up, no <code>/tmp</code> collisions.</td>
-<td><strong>Configurable</strong><br>Icon, color, namespace visibility, refresh interval, and a hide-default toggle.</td>
-</tr>
-</table>
-
-## Placeholders
+Put `#{kube}` in your status line and it shows the current context and namespace, such as `prod-ctx:web`. The plugin parses the kubeconfig with awk, so the segment works on a host with no kubectl installed.
 
 | Placeholder | Output |
-|-------------|--------|
-| `#{kube}` | the styled segment, for example `prod-ctx:web` |
+|:------------|:-------|
+| `#{kube}` | the styled segment: context, optional `@cluster`, `:namespace`, optional user, and any health badges |
 | `#{kube_context}` | the current context name only |
-| `#{kube_namespace}` | the current namespace only |
+| `#{kube_namespace}` | the current namespace only, `default` when the context sets none |
 
-```tmux
-set -g status-right '#{kube} | %H:%M'
-```
+The segment is empty when no current context is set. A current context that names no entry in the kubeconfig is shown in `@kube_revamped_warn_color` with `@kube_revamped_warn_icon` after it, instead of a namespace.
 
-## Install
+Three health badges are opt-in, because each one calls the cluster:
 
-With [TPM](https://github.com/tmux-plugins/tpm), add to `~/.tmux.conf`:
+| Badge | Probe | Shows |
+|:------|:------|:------|
+| reachability | `kubectl cluster-info` | a green `o` when it answers, a red `x` when it does not |
+| nodes | `kubectl get nodes` | ready over total, such as `3/3`, green when all are ready and in the warning color otherwise |
+| pods | `kubectl get pods` in the current namespace | `!N` in the warning color, where N counts pods neither `Running` nor `Completed`; hidden at zero |
+
+## Requirements
+
+| Requirement | Version or note |
+|:------------|:----------------|
+| tmux | 3.2 or later |
+| bash | 3.2 or later, so the macOS `/bin/bash` works |
+| kubeconfig | every file in `$KUBECONFIG`, or `~/.kube/config` when it is unset |
+| kubectl, optional | for the switchers and the health badges |
+| [k9s](https://k9scli.io), optional | for the popup, or any command set in `@kube_revamped_popup_command` |
+
+CI runs the suite on Linux x86_64 and arm64 with GNU and uutils coreutils, and on macOS Apple Silicon and Intel with the system BSD tools, GNU coreutils and uutils coreutils.
+
+## Installation
+
+With [TPM](https://github.com/tmux-plugins/tpm), add the plugin to `~/.tmux.conf` and press `prefix + I`:
 
 ```tmux
 set -g @plugin 'tmux-revamped/tmux-kube-revamped'
 ```
 
-Then press `prefix + I`, and put `#{kube}` somewhere in `status-left` or `status-right`.
+Without TPM, clone the repository and run the entrypoint from `~/.tmux.conf`:
 
-Manual install:
-
-```bash
+```sh
 git clone https://github.com/tmux-revamped/tmux-kube-revamped ~/.tmux/plugins/tmux-kube-revamped
+```
+
+```tmux
 run-shell ~/.tmux/plugins/tmux-kube-revamped/kube-revamped.tmux
 ```
+
+Set `status-left` or `status-right` before the plugin loads, because the entrypoint replaces the placeholders in those two options when it runs.
+
+## Usage
+
+```tmux
+set -g status-right '#{kube} | %H:%M'
+set -g @kube_revamped_prod_pattern 'prod'
+set -g @kube_revamped_probe_reach '1'
+```
+
+`prefix + M-k` opens a menu of every context in the kubeconfig. Picking one runs `kubectl config use-context` and updates the cache at once. The namespace menu and the k9s popup stay unbound until you give each one a key:
+
+```tmux
+set -g @kube_revamped_menu_namespace_key 'M-n'
+set -g @kube_revamped_popup_key 'K'
+```
+
+The namespace menu asks the cluster for its namespaces when you press the key, so it opens once kubectl answers or its 2-second request timeout passes. Picking one runs `kubectl config set-context --current --namespace`. The popup runs `k9s --context <context> --namespace <namespace>` for the cached context.
+
+`src/kube.sh doctor` prints whether kubectl and k9s are installed, whether each kubeconfig file is readable, and whether the current context is missing from the kubeconfig.
 
 ## Configuration
 
 | Option | Default | Meaning |
-|--------|---------|---------|
+|:-------|:--------|:--------|
 | `@kube_revamped_interval` | `10` | seconds a cached context stays fresh |
-| `@kube_revamped_icon` | empty | a glyph shown before the context, for example a Nerd Font kubernetes mark |
-| `@kube_revamped_color` | `#[fg=blue]` | the segment color |
-| `@kube_revamped_show_namespace` | `1` | set to `0` to show only the context, not `context:namespace` |
-| `@kube_revamped_hide_default` | `0` | set to `1` to hide the segment when the context is `default` |
-| `@kube_revamped_show_cluster` | `0` | set to `1` to append `@cluster` to the context |
-| `@kube_revamped_show_user` | `0` | set to `1` to append ` (user)` to the segment |
-| `@kube_revamped_prod_pattern` | empty | substring that marks a context as production, for example `prod` |
-| `@kube_revamped_prod_color` | `#[fg=red]` | the color used when the context matches the prod pattern |
-| `@kube_revamped_warn_color` | `#[fg=yellow]` | the color for a dangling context and the health badges |
-| `@kube_revamped_warn_icon` | `?` | the marker shown after a dangling context |
-| `@kube_revamped_menu_context_key` | `M-k` | key bound to the context switcher; `off` unbinds it |
-| `@kube_revamped_menu_namespace_key` | empty | key bound to the namespace switcher, unbound until set |
-| `@kube_revamped_popup_key` | empty | key bound to the k9s popup, unbound until set |
-| `@kube_revamped_popup_command` | `k9s` | the command run in the popup |
+| `@kube_revamped_icon` | empty | text shown before the context, such as a Nerd Font glyph |
+| `@kube_revamped_color` | `#[fg=blue]` | segment style |
+| `@kube_revamped_show_namespace` | `1` | `0` shows the context without `:namespace` |
+| `@kube_revamped_hide_default` | `0` | `1` hides `#{kube}` when the context is named `default` |
+| `@kube_revamped_show_cluster` | `0` | `1` appends `@cluster` to the context |
+| `@kube_revamped_show_user` | `0` | `1` appends ` (user)` to the segment |
+| `@kube_revamped_prod_pattern` | empty | substring that marks a context as production |
+| `@kube_revamped_prod_color` | `#[fg=red]` | segment style when the context contains the production pattern |
+| `@kube_revamped_warn_color` | `#[fg=yellow]` | style for a missing context and for unhealthy badges |
+| `@kube_revamped_warn_icon` | `?` | marker after a context missing from the kubeconfig |
+| `@kube_revamped_menu_context_key` | `M-k` | key for the context menu; `off` leaves it unbound |
+| `@kube_revamped_menu_namespace_key` | empty | key for the namespace menu |
+| `@kube_revamped_popup_key` | empty | key for the popup |
+| `@kube_revamped_popup_command` | `k9s` | command run in the popup, followed by `--context` and `--namespace` |
 | `@kube_revamped_popup_width` | `80%` | popup width |
 | `@kube_revamped_popup_height` | `80%` | popup height |
-| `@kube_revamped_probe_reach` | `0` | set to `1` for a cluster reachability dot (async, opt-in) |
-| `@kube_revamped_probe_nodes` | `0` | set to `1` for a node-ready badge (async, opt-in) |
-| `@kube_revamped_probe_pods` | `0` | set to `1` for a non-running pod count (async, opt-in) |
+| `@kube_revamped_probe_reach` | `0` | `1` turns on the reachability badge |
+| `@kube_revamped_probe_nodes` | `0` | `1` turns on the nodes badge |
+| `@kube_revamped_probe_pods` | `0` | `1` turns on the pods badge |
 
-The segment is empty when there is no current context, so it disappears when you are not pointed at a cluster.
+### Internal state
 
-## Switchers, popup, and health
+The plugin manages these options itself. Do not set them.
 
-`prefix + M-k` opens the context switcher, the one key the family allocates to
-this plugin. The namespace switcher and the k9s popup, pinned to the current
-context and namespace, are unbound until you give them a key.
+| Option | Holds |
+|:-------|:------|
+| `@kube_revamped_value` | the cached `context\|namespace` pair |
+| `@kube_revamped_dangling` | `1` when the current context is missing from the kubeconfig |
+| `@kube_revamped_cluster` | the cluster of the current context |
+| `@kube_revamped_user` | the user of the current context |
+| `@kube_revamped_reach` | `up` or `down` from the reachability probe |
+| `@kube_revamped_nodes` | ready over total nodes from the nodes probe |
+| `@kube_revamped_pods` | the count of pods that are neither running nor completed |
+| `@kube_revamped_value_lock` | `1` while a background refresh runs |
+
+Each of these also has a `_ts` companion, such as `@kube_revamped_value_ts`, holding the Unix time it was written.
+
+## Key bindings
+
+| Key | Action | Default |
+|:----|:-------|:--------|
+| `prefix + M-k` | context menu | bound |
+| `@kube_revamped_menu_namespace_key` | namespace menu | unbound |
+| `@kube_revamped_popup_key` | k9s popup | unbound |
+
+`M-k` is this plugin's slot in the family key allocation. Before version 2.0.0 the context menu had no default key. To leave it unbound:
 
 ```tmux
-set -g @kube_revamped_menu_context_key 'M-k'
-set -g @kube_revamped_menu_namespace_key 'C-n'
-set -g @kube_revamped_popup_key 'K'
+set -g @kube_revamped_menu_context_key 'off'
 ```
 
-The context switcher reads the kubeconfig directly. The namespace switcher asks
-the cluster for its namespaces when you press its key, and the menu opens once
-`kubectl` answers or its 2-second request timeout passes. Picking a context or a
-namespace refreshes the bar right away, running any enabled probe before the
-menu command returns. The health badges talk to the cluster, so they are off by
-default, and on the status refresh they run in a detached worker. Turn the badges
-on per signal:
+## How it works
 
-```tmux
-set -g @kube_revamped_probe_reach '1'
-set -g @kube_revamped_probe_nodes '1'
-set -g @kube_revamped_probe_pods '1'
+```mermaid
+graph LR
+    A[status render] --> B[src/kube.sh]
+    B --> C{cache fresh}
+    C -->|yes| D[tmux options]
+    C -->|no| E[background worker]
+    E --> F[kubeconfig parse]
+    E --> G[opt-in kubectl probes]
+    F --> D
+    G --> D
+    D --> H[segment]
 ```
 
-The popup needs `k9s` and tmux 3.2+. The switchers and namespace probes need
-`kubectl`. Run `src/kube.sh doctor` to see what was detected on this host.
+The entrypoint [`kube-revamped.tmux`](kube-revamped.tmux) replaces each placeholder in `status-left` and `status-right` with a `#()` call to [`src/kube.sh`](src/kube.sh), then binds the keys. Each call reads the cache from tmux server options. When the cache is older than `@kube_revamped_interval`, the call starts a detached worker and returns at once, so the render never waits and no temp file is written.
 
-## Compatibility
-
-Works on tmux 3.2 and later, on Linux (x86_64 and arm64) and macOS (Intel and Apple Silicon). It reads every file in `$KUBECONFIG` (the full colon-separated list, first non-empty current-context winning as kubectl does) and falls back to `~/.kube/config`.
+The worker reads every file in `$KUBECONFIG` in order, takes the first `current-context` it finds as kubectl does, and parses the `contexts:` list in [`src/lib/kube/kube.sh`](src/lib/kube/kube.sh). Each kubectl probe in [`src/lib/kube/cluster.sh`](src/lib/kube/cluster.sh) runs only when its option is `1`, with a 2-second request timeout and a hard 5-second limit. Context and namespace names are shell-quoted and their `#` characters doubled before they reach a menu, a popup or a key binding.
 
 ## Development
 
-```bash
-make test    # bats suite
-make lint    # shellcheck
-make coverage  # kcov line coverage on Linux
-```
+| Command | What it runs |
+|:--------|:-------------|
+| `make test` | the bats suite under [`test/`](test) |
+| `make lint` | shellcheck at warning severity on every shell file and [`family/bin/`](family/bin) |
+| `make coverage` | kcov line coverage on Linux, failing below 95% |
 
-The kubeconfig parsing lives in [`src/lib/kube/kube.sh`](src/lib/kube/kube.sh) as pure, seam-backed helpers, validated against fixtures with no real cluster.
+The kubeconfig parser and the badge renderers are pure functions tested against fixture text. kubectl and tmux sit behind small wrappers, so the tests need no cluster.
 
 ## License
 
@@ -149,26 +208,26 @@ memory, and `family/bin/sweep` is how it is discharged.
 | [`tmux-bluetooth-revamped`](https://github.com/tmux-revamped/tmux-bluetooth-revamped) | Every connected Bluetooth device and its battery in your tmux status bar, without blocking the render |
 | [`tmux-cpu-revamped`](https://github.com/tmux-revamped/tmux-cpu-revamped) | CPU load, temperature, and frequency in your tmux status bar, without ever blocking the render |
 | [`tmux-disk-revamped`](https://github.com/tmux-revamped/tmux-disk-revamped) | Disk usage for your tmux status bar, without ever blocking the status render |
-| [`tmux-extract-revamped`](https://github.com/tmux-revamped/tmux-extract-revamped) | Fuzzy-grab any URL, path, or word off the screen and paste it, pure shell, no Python |
-| [`tmux-fzf-revamped`](https://github.com/tmux-revamped/tmux-fzf-revamped) | Jump to any session, window, or pane, or kill it, from one fzf popup |
-| [`tmux-git-revamped`](https://github.com/tmux-revamped/tmux-git-revamped) | Git repository status in your tmux status bar, without ever blocking the render |
-| [`tmux-gpu-revamped`](https://github.com/tmux-revamped/tmux-gpu-revamped) | GPU load, temperature, frequency, and memory for your tmux status bar |
-| [`tmux-kube-revamped`](https://github.com/tmux-revamped/tmux-kube-revamped) | **this plugin**, Current Kubernetes context and namespace in your tmux status bar, async, kubectl-free, never blocking |
+| [`tmux-extract-revamped`](https://github.com/tmux-revamped/tmux-extract-revamped) | Pick a URL, path, hash or any other token off the screen with fzf and type it at the cursor, in pure shell |
+| [`tmux-fzf-revamped`](https://github.com/tmux-revamped/tmux-fzf-revamped) | Switch to, kill, rename or create tmux sessions, windows and panes from fzf pickers in a popup |
+| [`tmux-git-revamped`](https://github.com/tmux-revamped/tmux-git-revamped) | Show the active pane's git branch, changes and provider counts in the tmux status bar without blocking it |
+| [`tmux-gpu-revamped`](https://github.com/tmux-revamped/tmux-gpu-revamped) | GPU load, temperature, clock, power and memory in the tmux status bar, from NVIDIA, AMD, Intel and Apple GPUs |
+| [`tmux-kube-revamped`](https://github.com/tmux-revamped/tmux-kube-revamped) | **this plugin**, Current Kubernetes context and namespace in the tmux status bar, parsed from kubeconfig without kubectl |
 | [`tmux-launcher-revamped`](https://github.com/tmux-revamped/tmux-launcher-revamped) | Launch any TUI app in a popup or a window, scoped to the current pane's directory, with one configurable bindi |
 | [`tmux-logging-revamped`](https://github.com/tmux-revamped/tmux-logging-revamped) | Capture any pane to a file: live logging, full scrollback, or a one-shot screenshot |
 | [`tmux-music-revamped`](https://github.com/tmux-revamped/tmux-music-revamped) | Now playing in your tmux status bar, without ever blocking the status render |
 | [`tmux-network-revamped`](https://github.com/tmux-revamped/tmux-network-revamped) | Network throughput in your tmux status bar, without ever blocking the render |
 | [`tmux-pain-control-revamped`](https://github.com/tmux-revamped/tmux-pain-control-revamped) | Standard pane and window management bindings for tmux, version aware, vim friendly, and fully configurable |
-| [`tmux-persist-revamped`](https://github.com/tmux-revamped/tmux-persist-revamped) | Save, auto-save, and restore your whole tmux environment, one plugin, no status-line tricks |
+| [`tmux-persist-revamped`](https://github.com/tmux-revamped/tmux-persist-revamped) | Save every tmux session, window and pane, auto-save on a timer, and restore it all after a reboot |
 | [`tmux-plugin-template`](https://github.com/tmux-revamped/tmux-plugin-template) | A template for building non-blocking tmux status plugins |
-| [`tmux-pomodoro-revamped`](https://github.com/tmux-revamped/tmux-pomodoro-revamped) | A Pomodoro timer in your tmux status bar, with zero temp files: all state lives in tmux options |
-| [`tmux-ram-revamped`](https://github.com/tmux-revamped/tmux-ram-revamped) | RAM usage for your tmux status bar, without ever blocking the status render |
-| [`tmux-reorder-revamped`](https://github.com/tmux-revamped/tmux-reorder-revamped) | Drag a window tab on the status bar with the mouse to move that window |
-| [`tmux-scroll-revamped`](https://github.com/tmux-revamped/tmux-scroll-revamped) | Mouse wheel that does the right thing: scroll the app directly, copy-mode everywhere else. No app names to con |
-| [`tmux-sensible-revamped`](https://github.com/tmux-revamped/tmux-sensible-revamped) | Sensible tmux defaults that normalize behavior across every tmux version, OS, and terminal, without clobbering |
+| [`tmux-pomodoro-revamped`](https://github.com/tmux-revamped/tmux-pomodoro-revamped) | A Pomodoro timer in the tmux status bar that keeps all of its state in tmux options, with no temp files |
+| [`tmux-ram-revamped`](https://github.com/tmux-revamped/tmux-ram-revamped) | RAM, swap and memory pressure in the tmux status bar, sampled in the background so the render never waits |
+| [`tmux-reorder-revamped`](https://github.com/tmux-revamped/tmux-reorder-revamped) | Drag a window tab along the tmux status bar with the mouse to move that window |
+| [`tmux-scroll-revamped`](https://github.com/tmux-revamped/tmux-scroll-revamped) | Send the mouse wheel to apps that scroll themselves and into tmux copy-mode everywhere else |
+| [`tmux-sensible-revamped`](https://github.com/tmux-revamped/tmux-sensible-revamped) | Sensible tmux defaults, gated by tmux version and terminal, that leave the options you set alone |
 | [`tmux-tiling-revamped`](https://github.com/tmux-revamped/tmux-tiling-revamped) | BSP tiling window management for tmux. Eight layouts, nineteen operations, zero dependencies |
-| [`tmux-time-revamped`](https://github.com/tmux-revamped/tmux-time-revamped) | Local clock and world clocks in your tmux status bar, without ever blocking the render |
-| [`tmux-weather-revamped`](https://github.com/tmux-revamped/tmux-weather-revamped) | Weather in your tmux status bar, fetched in the background so the render never waits on the network |
+| [`tmux-time-revamped`](https://github.com/tmux-revamped/tmux-time-revamped) | Local and world clocks for the tmux status bar, colored by time of day, with countdowns and a DST warning |
+| [`tmux-weather-revamped`](https://github.com/tmux-revamped/tmux-weather-revamped) | Weather for the tmux status bar from wttr.in, fetched in the background so the status line never waits |
 
 ### Checking an installation
 
