@@ -8,7 +8,7 @@
 
 </div>
 
-**3** placeholders · **2** switchers · **k9s popup** · **no kubectl required** · **tmux 1.9 to 3.5** · **164** tests · **95%+** coverage
+**3** placeholders · **2** switchers · **k9s popup** · **no kubectl required** · **tmux 3.2+** · **95%+** coverage
 
 Shows the active Kubernetes context and namespace, read straight from your kubeconfig. It parses `~/.kube/config` directly, so it works without `kubectl` installed and never forks a process on the hot path. The read runs in a detached background worker and the result is cached in tmux server options, so the status line never waits, and no temp file is ever written.
 
@@ -93,9 +93,13 @@ set -g @kube_revamped_menu_namespace_key 'C-n'
 set -g @kube_revamped_popup_key 'K'
 ```
 
-The context switcher reads the kubeconfig directly. The namespace switcher and the
-health badges talk to the cluster, so they are off by default and run through a
-detached worker. Turn the badges on per signal:
+The context switcher reads the kubeconfig directly. The namespace switcher asks
+the cluster for its namespaces when you press its key, and the menu opens once
+`kubectl` answers or its 2-second request timeout passes. Picking a context or a
+namespace refreshes the bar right away, running any enabled probe before the
+menu command returns. The health badges talk to the cluster, so they are off by
+default, and on the status refresh they run in a detached worker. Turn the badges
+on per signal:
 
 ```tmux
 set -g @kube_revamped_probe_reach '1'
@@ -108,7 +112,7 @@ The popup needs `k9s` and tmux 3.2+. The switchers and namespace probes need
 
 ## Compatibility
 
-Works on every tmux version TPM supports, 1.9 and up, on Linux (x86_64 and arm64) and macOS (Intel and Apple Silicon). It reads every file in `$KUBECONFIG` (the full colon-separated list, first non-empty current-context winning as kubectl does) and falls back to `~/.kube/config`.
+Works on tmux 3.2 and later, on Linux (x86_64 and arm64) and macOS (Intel and Apple Silicon). It reads every file in `$KUBECONFIG` (the full colon-separated list, first non-empty current-context winning as kubectl does) and falls back to `~/.kube/config`.
 
 ## Development
 
