@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Context entries are parsed whole, so a name written before its context
   block, a quoted name with spaces, and a nested extensions list all
   resolve correctly.
+- Context and namespace names are quoted in the switcher menus, the k9s
+  popup and the key bindings, so a space, a quote, a semicolon or a # in a
+  name, or in the plugin path, no longer breaks the command or runs as
+  shell syntax.
 
 ## [1.1.0] - 2026-06-29
 

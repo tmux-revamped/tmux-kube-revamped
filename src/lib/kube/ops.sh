@@ -48,6 +48,28 @@ kube_tmux_version() {
   kube_parse_version "$(_kube_tmux_version_string)"
 }
 
+_kube_hash_escape() {
+  local hash="#"
+  printf '%s' "${1//"${hash}"/${hash}${hash}}"
+}
+
+_kube_shell_words() {
+  local out="" word
+  for word in "$@"; do
+    out="${out:+${out} }$(printf '%q' "${word}")"
+  done
+  printf '%s' "${out}"
+}
+
+_kube_tmux_quote() {
+  local quote="'" escaped="'\\''"
+  printf "'%s'" "${1//"${quote}"/${escaped}}"
+}
+
+_kube_run_shell_command() {
+  _kube_hash_escape "run-shell $(_kube_tmux_quote "$(_kube_hash_escape "$(_kube_shell_words "$@")")")"
+}
+
 # kube_menu_context SELF -> a display-menu of every kubeconfig context; selecting
 # one switches to it. The context list comes from the kubeconfig, no cluster.
 kube_menu_context() {
@@ -55,7 +77,7 @@ kube_menu_context() {
   yaml="$(_kube_config_text)"
   local args=(display-menu -T "Context")
   while IFS= read -r name; do
-    args+=("${name}" "" "run-shell \"${self} use-context ${name}\"")
+    args+=("$(_kube_hash_escape "${name}")" "" "$(_kube_run_shell_command "${self}" use-context "${name}")")
   done < <(kube_list_contexts "${yaml}")
   [[ ${#args[@]} -le 3 ]] && return 0
   _tmux "${args[@]}"
@@ -69,7 +91,7 @@ kube_menu_namespace() {
   local args=(display-menu -T "Namespace")
   while IFS= read -r name; do
     [[ -z "${name}" ]] && continue
-    args+=("${name}" "" "run-shell \"${self} use-namespace ${name}\"")
+    args+=("$(_kube_hash_escape "${name}")" "" "$(_kube_run_shell_command "${self}" use-namespace "${name}")")
   done < <(kube_list_namespaces)
   [[ ${#args[@]} -le 3 ]] && return 0
   _tmux "${args[@]}"
@@ -89,8 +111,8 @@ kube_popup() {
   width="$(get_tmux_option "@kube_revamped_popup_width" "80%")"
   height="$(get_tmux_option "@kube_revamped_popup_height" "80%")"
   cmd="$(get_tmux_option "@kube_revamped_popup_command" "k9s")"
-  full="${cmd} --context ${ctx}"
-  [[ -n "${ns}" ]] && full="${full} --namespace ${ns}"
+  full="${cmd} --context $(printf '%q' "${ctx}")"
+  [[ -n "${ns}" ]] && full="${full} --namespace $(printf '%q' "${ns}")"
   _tmux display-popup -E -w "${width}" -h "${height}" "${full}"
 }
 
@@ -102,9 +124,9 @@ kube_apply_keys() {
   k_ctx="$(get_tmux_option "@kube_revamped_menu_context_key" "")"
   k_ns="$(get_tmux_option "@kube_revamped_menu_namespace_key" "")"
   k_pop="$(get_tmux_option "@kube_revamped_popup_key" "")"
-  [[ -n "${k_ctx}" ]] && _tmux bind-key "${k_ctx}" run-shell "${self} menu-context"
-  [[ -n "${k_ns}" ]] && _tmux bind-key "${k_ns}" run-shell "${self} menu-namespace"
-  [[ -n "${k_pop}" ]] && _tmux bind-key "${k_pop}" run-shell "${self} popup"
+  [[ -n "${k_ctx}" ]] && _tmux bind-key "${k_ctx}" run-shell "$(_kube_hash_escape "$(_kube_shell_words "${self}" menu-context)")"
+  [[ -n "${k_ns}" ]] && _tmux bind-key "${k_ns}" run-shell "$(_kube_hash_escape "$(_kube_shell_words "${self}" menu-namespace)")"
+  [[ -n "${k_pop}" ]] && _tmux bind-key "${k_pop}" run-shell "$(_kube_hash_escape "$(_kube_shell_words "${self}" popup)")"
   return 0
 }
 
@@ -143,6 +165,10 @@ kube_doctor() {
 }
 
 export -f _tmux
+export -f _kube_hash_escape
+export -f _kube_shell_words
+export -f _kube_tmux_quote
+export -f _kube_run_shell_command
 export -f kube_parse_version
 export -f kube_version_ge
 export -f _kube_tmux_version_string
