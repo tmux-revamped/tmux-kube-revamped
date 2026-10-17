@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-#
-# kube.sh: command dispatcher for tmux-kube-revamped.
-#
-# Usage: kube.sh kube | context | namespace | refresh | doctor | bind-keys
-#                 use-context NAME | use-namespace NAME
-#                 menu-context | menu-namespace | popup
-#
-# The kubeconfig read runs in a detached background worker and the result is
-# cached in tmux server user-options, so the status line never blocks and no temp
-# file is touched. Switchers, the popup, and cluster probes all flow through
-# mockable seams, so nothing here reaches a real cluster under test.
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 _KUBE_SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/kube.sh"
@@ -29,7 +18,6 @@ source "${PLUGIN_DIR}/src/lib/kube/render.sh"
 # shellcheck source=/dev/null
 source "${PLUGIN_DIR}/src/lib/kube/ops.sh"
 
-# kube_max_age -> seconds a cached context stays fresh.
 kube_max_age() {
   local s
   s=$(get_tmux_option "@kube_revamped_interval" "10")
@@ -37,9 +25,6 @@ kube_max_age() {
   echo "${s}"
 }
 
-# kube_refresh -> the cache worker: read the merged kubeconfig once and store the
-# context, namespace, dangling flag, cluster, and user. A current-context absent
-# from the kubeconfig is flagged dangling. Enabled cluster probes run last.
 kube_refresh() {
   local yaml ctx ns dangling cluster user
   yaml="$(_kube_config_text)"
@@ -69,8 +54,6 @@ kube_refresh() {
   kube_probe_all
 }
 
-# kube_render CACHED -> the formatted segment plus any enabled health badges, from
-# a "context|namespace" value.
 kube_render() {
   local cached="${1}" ctx ns seg health
   [[ -z "${cached}" ]] && return 0
@@ -83,14 +66,11 @@ kube_render() {
   printf '%s%s\n' "${seg}" "${health}"
 }
 
-# kube_use_context NAME -> switch context, then refresh the cache so the bar
-# reflects the change on the next render.
 kube_use_context() {
   kube_apply_context "${1}" || return 0
   kube_refresh
 }
 
-# kube_use_namespace NAME -> switch the current context's namespace, then refresh.
 kube_use_namespace() {
   kube_apply_namespace "${1}" || return 0
   kube_refresh

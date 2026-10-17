@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-#
-# ops.sh: interactive operations: context and namespace switchers, the k9s popup,
-# the key bindings that drive them, and the doctor report.
-#
-# Every tmux action flows through the _tmux seam and every cluster call through
-# the _kubectl seam (in cluster.sh), so the menus, popup, and bindings are
-# validated without a live tmux and without touching a cluster.
 
 [[ -n "${_KUBE_REVAMPED_OPS_LOADED:-}" ]] && return 0
 _KUBE_REVAMPED_OPS_LOADED=1
@@ -22,24 +15,19 @@ source "${_KUBE_OPS_DIR}/kube.sh"
 # shellcheck source=/dev/null
 source "${_KUBE_OPS_DIR}/cluster.sh"
 
-# _tmux ARGS... -> the single seam every interactive tmux command flows through.
-# Tests replace it to capture the command instead of running a live tmux.
 _tmux() {
   tmux "$@"
 }
 
-# kube_parse_version TEXT -> major.minor from `tmux -V`, handling 3.4a and next-3.5.
 kube_parse_version() {
   printf '%s\n' "${1}" | sed -En 's/^tmux[ -]([a-z]+-)?([0-9]+\.[0-9]+).*/\2/p'
 }
 
-# kube_version_ge HAVE WANT -> 0 when HAVE is greater than or equal to WANT.
 kube_version_ge() {
   [[ -n "${1}" && -n "${2}" ]] || return 1
   [ "$(printf '%s\n%s\n' "${2}" "${1}" | sort -V | head -n1)" = "${2}" ]
 }
 
-# _kube_tmux_version_string -> raw `tmux -V`. Host-probe seam; tests override it.
 _kube_tmux_version_string() {
   tmux -V 2>/dev/null
 }
@@ -70,8 +58,6 @@ _kube_run_shell_command() {
   _kube_hash_escape "run-shell $(_kube_tmux_quote "$(_kube_hash_escape "$(_kube_shell_words "$@")")")"
 }
 
-# kube_menu_context SELF -> a display-menu of every kubeconfig context; selecting
-# one switches to it. The context list comes from the kubeconfig, no cluster.
 kube_menu_context() {
   local self="${1}" yaml name
   yaml="$(_kube_config_text)"
@@ -83,9 +69,6 @@ kube_menu_context() {
   _tmux "${args[@]}"
 }
 
-# kube_menu_namespace SELF -> a display-menu of the cluster's namespaces; selecting
-# one switches the current context to it. Reaches the cluster through _kubectl, so
-# it runs only on the keypress, never on the hot path.
 kube_menu_namespace() {
   local self="${1}" name
   local args=(display-menu -T "Namespace")
@@ -97,9 +80,6 @@ kube_menu_namespace() {
   _tmux "${args[@]}"
 }
 
-# kube_popup -> open k9s in a display-popup pinned to the current context and
-# namespace. Gated on tmux 3.2+, the floor for display-popup; older tmux is a
-# no-op. Reads the cached context, so it never parses the kubeconfig on keypress.
 kube_popup() {
   local cached ctx ns width height cmd full
   kube_version_ge "$(kube_tmux_version)" 3.2 || return 0
@@ -116,10 +96,6 @@ kube_popup() {
   _tmux display-popup -E -w "${width}" -h "${height}" "${full}"
 }
 
-# kube_apply_keys SELF -> bind the configured switcher and popup keys. The
-# context switcher defaults to M-k, the key the family allocates to this plugin,
-# and "off" unbinds it. The namespace switcher and the popup default to empty, so
-# they are bound only when the user opts in.
 kube_apply_keys() {
   local self="${1}" k_ctx k_ns k_pop
   k_ctx="$(get_tmux_option "@kube_revamped_menu_context_key" "M-k")"
@@ -132,8 +108,6 @@ kube_apply_keys() {
   return 0
 }
 
-# kube_doctor -> a capability report: which tools are present, which kubeconfig
-# files are readable, and whether the current context is dangling.
 kube_doctor() {
   local yaml ctx f
   echo "tmux-kube-revamped doctor"

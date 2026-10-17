@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# render.sh: format the Kubernetes context and namespace into a status segment.
 
 [[ -n "${_KUBE_REVAMPED_RENDER_LOADED:-}" ]] && return 0
 _KUBE_REVAMPED_RENDER_LOADED=1
@@ -11,11 +9,6 @@ source "${_KUBE_RENDER_DIR}/../tmux/tmux-ops.sh"
 
 _KUBE_RESET="#[default]"
 
-# kube_render_segment CONTEXT NAMESPACE [DANGLING] [CLUSTER] [USER] ->
-# "<color><icon> <context>[@cluster][:namespace][ (user)][ <warn>]<reset>".
-# Empty when there is no context, or when hide_default is on and the context is
-# "default". The color turns to the warn color when the context is dangling, and
-# to the prod color when the context matches the configured prod pattern.
 kube_render_segment() {
   local ctx="${1}" ns="${2}" dangling="${3:-}" cluster="${4:-}" user="${5:-}"
   local color icon out prod_pattern marker

@@ -1,18 +1,8 @@
 #!/usr/bin/env bash
-#
-# kube.sh: read the current Kubernetes context and namespace from the kubeconfig.
-#
-# Parsing is pure. The file read sits behind a seam the tests override, so no real
-# kubeconfig is touched under test. Reading the config directly means the plugin
-# works without kubectl installed and never forks a kubectl process on refresh.
 
 [[ -n "${_KUBE_REVAMPED_LOADED:-}" ]] && return 0
 _KUBE_REVAMPED_LOADED=1
 
-# kube_current_context YAML -> the value of the top-level current-context key,
-# empty when absent. Quotes around the value are stripped. When the merged text
-# holds several current-context lines (one per KUBECONFIG file), the last
-# non-empty value wins, matching how a colon-separated KUBECONFIG is resolved.
 kube_current_context() {
   printf '%s\n' "${1}" | awk -v q="'" '
     /^current-context:/ {
@@ -25,26 +15,18 @@ kube_current_context() {
     }'
 }
 
-# kube_namespace_for YAML CONTEXT -> the namespace of CONTEXT, "default" when the
-# context has none, empty when the context is not found. Reads the kubectl layout
-# where each contexts entry has a context block (with namespace) then a name.
 kube_namespace_for() {
   _kube_context_field "${1}" "${2}" namespace
 }
 
-# kube_cluster_for YAML CONTEXT -> the cluster name bound to CONTEXT, empty when
-# the context is not found or declares no cluster.
 kube_cluster_for() {
   _kube_context_field "${1}" "${2}" cluster
 }
 
-# kube_user_for YAML CONTEXT -> the user name bound to CONTEXT, empty when the
-# context is not found or declares no user.
 kube_user_for() {
   _kube_context_field "${1}" "${2}" user
 }
 
-# kube_list_contexts YAML -> every context name, one per line, in file order.
 kube_list_contexts() {
   local sep=$'\x1f' name rest
   while IFS="${sep}" read -r name rest; do
@@ -102,17 +84,11 @@ _kube_context_records() {
     END { flush() }'
 }
 
-# kube_context_exists YAML NAME -> 0 when NAME is one of the kubeconfig contexts.
-# A current-context that fails this check is dangling: it points at a context the
-# merged kubeconfig no longer defines, the classic stale-context-after-VPN case.
 kube_context_exists() {
   [[ -z "${2}" ]] && return 1
   kube_list_contexts "${1}" | grep -qxF -- "${2}"
 }
 
-# _kube_config_files -> one kubeconfig path per line. Honors the full KUBECONFIG
-# colon-separated list, falling back to ~/.kube/config when it is unset. This is
-# a seam: tests point it at fixture files instead of a real kubeconfig.
 _kube_config_files() {
   local list="${KUBECONFIG:-${HOME}/.kube/config}"
   local f
@@ -122,10 +98,6 @@ _kube_config_files() {
   done
 }
 
-# _kube_config_text -> the merged text of every kubeconfig file, newline-joined so
-# a context block in one file never runs into the next. Host-probe seam: tests
-# override it. Reading every file means a context defined only in a later
-# KUBECONFIG entry is still seen, instead of silently showing the first file.
 _kube_config_text() {
   local f
   while IFS= read -r f; do
