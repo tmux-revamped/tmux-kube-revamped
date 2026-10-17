@@ -197,9 +197,38 @@ make_arg_printer() {
   [[ "${output}" == *"k9s -A --context prod-ctx --namespace web"* ]]
 }
 
-@test "ops.sh - kube_apply_keys binds nothing by default" {
+@test "ops.sh - kube_apply_keys binds only the context switcher to M-k by default" {
+  # Arrange
   _tmux() { printf '%s\n' "$*"; }
+
+  # Act
   run kube_apply_keys "${SELF}"
+
+  # Assert
+  [[ "${output}" == "bind-key M-k run-shell ${SELF} menu-context" ]]
+}
+
+@test "ops.sh - kube_apply_keys leaves the namespace switcher and popup unbound by default" {
+  # Arrange
+  _tmux() { printf '%s\n' "$*"; }
+
+  # Act
+  run kube_apply_keys "${SELF}"
+
+  # Assert
+  [[ "${output}" != *"menu-namespace"* ]] || false
+  [[ "${output}" != *"popup"* ]]
+}
+
+@test "ops.sh - kube_apply_keys binds nothing when the context key is off" {
+  # Arrange
+  set_tmux_option "@kube_revamped_menu_context_key" "off"
+  _tmux() { printf '%s\n' "$*"; }
+
+  # Act
+  run kube_apply_keys "${SELF}"
+
+  # Assert
   [[ -z "${output}" ]]
 }
 
@@ -215,6 +244,7 @@ make_arg_printer() {
 }
 
 @test "ops.sh - kube_apply_keys binds only the keys that are set" {
+  set_tmux_option "@kube_revamped_menu_context_key" "off"
   set_tmux_option "@kube_revamped_popup_key" "K"
   _tmux() { printf '%s\n' "$*"; }
   run kube_apply_keys "${SELF}"
@@ -303,6 +333,7 @@ make_arg_printer() {
 
 @test "ops.sh - kube_apply_keys quotes a plugin path with a space and a quote" {
   # Arrange
+  set_tmux_option "@kube_revamped_menu_context_key" "off"
   set_tmux_option "@kube_revamped_popup_key" "K"
   _tmux() { printf '%s\n' "${@: -1}"; }
 

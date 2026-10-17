@@ -4,7 +4,7 @@
 
 **Current Kubernetes context and namespace in your tmux status bar, async, kubectl-free, never blocking.**
 
-[![Tests](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](CHANGELOG.md)
+[![Tests](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml/badge.svg)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
 
 </div>
 
@@ -69,9 +69,9 @@ run-shell ~/.tmux/plugins/tmux-kube-revamped/kube-revamped.tmux
 | `@kube_revamped_prod_color` | `#[fg=red]` | the color used when the context matches the prod pattern |
 | `@kube_revamped_warn_color` | `#[fg=yellow]` | the color for a dangling context and the health badges |
 | `@kube_revamped_warn_icon` | `?` | the marker shown after a dangling context |
-| `@kube_revamped_menu_context_key` | empty | key bound to the context switcher, for example `C-k` |
-| `@kube_revamped_menu_namespace_key` | empty | key bound to the namespace switcher |
-| `@kube_revamped_popup_key` | empty | key bound to the k9s popup |
+| `@kube_revamped_menu_context_key` | `M-k` | key bound to the context switcher; `off` unbinds it |
+| `@kube_revamped_menu_namespace_key` | empty | key bound to the namespace switcher, unbound until set |
+| `@kube_revamped_popup_key` | empty | key bound to the k9s popup, unbound until set |
 | `@kube_revamped_popup_command` | `k9s` | the command run in the popup |
 | `@kube_revamped_popup_width` | `80%` | popup width |
 | `@kube_revamped_popup_height` | `80%` | popup height |
@@ -83,12 +83,12 @@ The segment is empty when there is no current context, so it disappears when you
 
 ## Switchers, popup, and health
 
-Bind a key to switch context or namespace from the bar, or to open k9s pinned to
-the current context and namespace. Every key defaults to empty, so nothing is
-bound unless you opt in.
+`prefix + M-k` opens the context switcher, the one key the family allocates to
+this plugin. The namespace switcher and the k9s popup, pinned to the current
+context and namespace, are unbound until you give them a key.
 
 ```tmux
-set -g @kube_revamped_menu_context_key 'C-k'
+set -g @kube_revamped_menu_context_key 'M-k'
 set -g @kube_revamped_menu_namespace_key 'C-n'
 set -g @kube_revamped_popup_key 'K'
 ```

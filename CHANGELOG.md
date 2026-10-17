@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-17
+
+### Changed
+
+- **Breaking:** the context switcher is now bound to `prefix + M-k` by default,
+  the key the family allocates to this plugin. It was unbound before. Set
+  `@kube_revamped_menu_context_key` to `off` to leave it unbound, or to another
+  key. The namespace switcher and the k9s popup stay unbound until set.
+
 ### Fixed
 
 - With several KUBECONFIG files, the first file that sets current-context now

@@ -116,12 +116,14 @@ kube_popup() {
   _tmux display-popup -E -w "${width}" -h "${height}" "${full}"
 }
 
-# kube_apply_keys SELF -> bind the configured switcher and popup keys. Every key
-# defaults to empty, so nothing is bound unless the user opts in, and no default
-# keybinding is ever stolen.
+# kube_apply_keys SELF -> bind the configured switcher and popup keys. The
+# context switcher defaults to M-k, the key the family allocates to this plugin,
+# and "off" unbinds it. The namespace switcher and the popup default to empty, so
+# they are bound only when the user opts in.
 kube_apply_keys() {
   local self="${1}" k_ctx k_ns k_pop
-  k_ctx="$(get_tmux_option "@kube_revamped_menu_context_key" "")"
+  k_ctx="$(get_tmux_option "@kube_revamped_menu_context_key" "M-k")"
+  [[ "${k_ctx}" == "off" ]] && k_ctx=""
   k_ns="$(get_tmux_option "@kube_revamped_menu_namespace_key" "")"
   k_pop="$(get_tmux_option "@kube_revamped_popup_key" "")"
   [[ -n "${k_ctx}" ]] && _tmux bind-key "${k_ctx}" run-shell "$(_kube_hash_escape "$(_kube_shell_words "${self}" menu-context)")"
