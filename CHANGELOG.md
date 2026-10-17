@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   popup and the key bindings, so a space, a quote, a semicolon or a # in a
   name, or in the plugin path, no longer breaks the command or runs as
   shell syntax.
+- Each cluster probe now has a hard 5-second limit, so a kubectl stuck in
+  an auth plugin or a dead VPN can no longer outlive the worker lock and
+  let a second worker start beside it.
 
 ## [1.1.0] - 2026-06-29
 

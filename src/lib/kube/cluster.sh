@@ -23,10 +23,28 @@ _kubectl() {
   kubectl "$@"
 }
 
+KUBE_PROBE_TIMEOUT="${KUBE_PROBE_TIMEOUT:-5}"
+
+_kube_with_timeout() {
+  local limit="${1}"
+  shift
+  (
+    set -m
+    "$@" &
+    local pid=$!
+    ( sleep "${limit}"; kill -TERM -- "-${pid}" ) >/dev/null 2>&1 &
+    local watcher=$!
+    local status=0
+    wait "${pid}" || status=$?
+    kill -TERM -- "-${watcher}" 2>/dev/null
+    exit "${status}"
+  ) 2>/dev/null
+}
+
 # kube_reach_ok -> 0 when the current cluster answers. A short request timeout
 # keeps a dead VPN from hanging the worker.
 kube_reach_ok() {
-  _kubectl cluster-info --request-timeout=2 >/dev/null 2>&1
+  _kube_with_timeout "${KUBE_PROBE_TIMEOUT}" _kubectl cluster-info --request-timeout=2 >/dev/null 2>&1
 }
 
 # kube_parse_nodes TEXT -> "ready/total" from `kubectl get nodes --no-headers`.
@@ -37,7 +55,7 @@ kube_parse_nodes() {
 # kube_nodes_state -> "ready/total" for the current context, empty on failure.
 kube_nodes_state() {
   local out
-  out="$(_kubectl get nodes --no-headers --request-timeout=2 2>/dev/null)" || return 0
+  out="$(_kube_with_timeout "${KUBE_PROBE_TIMEOUT}" _kubectl get nodes --no-headers --request-timeout=2 2>/dev/null)" || return 0
   [[ -z "${out}" ]] && return 0
   kube_parse_nodes "${out}"
 }
@@ -51,7 +69,7 @@ kube_parse_pods() {
 # kube_pods_state -> bad-pod count for the current namespace, empty on failure.
 kube_pods_state() {
   local out
-  out="$(_kubectl get pods --no-headers --request-timeout=2 2>/dev/null)" || return 0
+  out="$(_kube_with_timeout "${KUBE_PROBE_TIMEOUT}" _kubectl get pods --no-headers --request-timeout=2 2>/dev/null)" || return 0
   [[ -z "${out}" ]] && return 0
   kube_parse_pods "${out}"
 }
@@ -135,6 +153,7 @@ kube_health_segment() {
 }
 
 export -f _kubectl
+export -f _kube_with_timeout
 export -f kube_reach_ok
 export -f kube_parse_nodes
 export -f kube_nodes_state

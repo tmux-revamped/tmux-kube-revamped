@@ -102,8 +102,14 @@ teardown() {
 }
 
 @test "cluster.sh - kube_apply_context is a no-op for an empty name" {
+  # Arrange
   _kubectl() { echo "called" > "${TEST_TMPDIR}/k"; }
-  ! kube_apply_context ""
+
+  # Act
+  run kube_apply_context ""
+
+  # Assert
+  [ "${status}" -ne 0 ] || false
   [[ ! -f "${TEST_TMPDIR}/k" ]]
 }
 
@@ -114,8 +120,14 @@ teardown() {
 }
 
 @test "cluster.sh - kube_apply_namespace is a no-op for an empty name" {
+  # Arrange
   _kubectl() { echo "called" > "${TEST_TMPDIR}/k"; }
-  ! kube_apply_namespace ""
+
+  # Act
+  run kube_apply_namespace ""
+
+  # Assert
+  [ "${status}" -ne 0 ] || false
   [[ ! -f "${TEST_TMPDIR}/k" ]]
 }
 
@@ -225,4 +237,48 @@ teardown() {
   set_tmux_option "@kube_revamped_probe_pods" "1"
   run kube_health_segment
   [[ -z "${output}" ]]
+}
+
+@test "cluster.sh - kube_nodes_state gives up on a hung kubectl" {
+  # Arrange
+  export KUBE_PROBE_TIMEOUT=1
+  _kubectl() { sleep 30; echo "n1 Ready a b c"; }
+  local started="${SECONDS}"
+
+  # Act
+  local nodes
+  nodes="$(kube_nodes_state)"
+
+  # Assert
+  [[ -z "${nodes}" ]] || false
+  (( SECONDS - started < 10 ))
+}
+
+@test "cluster.sh - kube_reach_ok reports down on a hung kubectl" {
+  # Arrange
+  export KUBE_PROBE_TIMEOUT=1
+  _kubectl() { sleep 30; }
+  local started="${SECONDS}"
+
+  # Act
+  run kube_reach_ok
+
+  # Assert
+  [ "${status}" -ne 0 ] || false
+  (( SECONDS - started < 10 ))
+}
+
+@test "cluster.sh - kube_pods_state gives up on a hung kubectl" {
+  # Arrange
+  export KUBE_PROBE_TIMEOUT=1
+  _kubectl() { sleep 30; echo "p1 1/1 CrashLoopBackOff 0 1m"; }
+  local started="${SECONDS}"
+
+  # Act
+  local pods
+  pods="$(kube_pods_state)"
+
+  # Assert
+  [[ -z "${pods}" ]] || false
+  (( SECONDS - started < 10 ))
 }
