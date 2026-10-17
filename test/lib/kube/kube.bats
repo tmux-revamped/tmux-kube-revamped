@@ -189,3 +189,80 @@ YAML
   [[ "${lines[0]}" == "/a/one" ]]
   [[ "${lines[1]}" == "/b/two" ]]
 }
+
+@test "kube.sh - context fields resolve when name precedes the context block" {
+  # Arrange
+  local yaml
+  yaml=$(cat <<'YAML'
+contexts:
+- name: first-ctx
+  context:
+    cluster: one
+    namespace: one-ns
+    user: one-user
+- name: second-ctx
+  context:
+    cluster: two
+YAML
+)
+
+  # Act
+  local ns cluster user
+  ns="$(kube_namespace_for "${yaml}" "first-ctx")"
+  cluster="$(kube_cluster_for "${yaml}" "second-ctx")"
+  user="$(kube_user_for "${yaml}" "first-ctx")"
+
+  # Assert
+  [[ "${ns}" == "one-ns" ]] || false
+  [[ "${cluster}" == "two" ]] || false
+  [[ "${user}" == "one-user" ]]
+}
+
+@test "kube.sh - quoted values keep their spaces" {
+  # Arrange
+  local yaml
+  yaml=$(cat <<'YAML'
+contexts:
+- context:
+    cluster: "my cluster"
+    namespace: 'team ns'
+  name: "my ctx"
+current-context: "my ctx"
+YAML
+)
+
+  # Act
+  local ctx ns cluster names
+  ctx="$(kube_current_context "${yaml}")"
+  ns="$(kube_namespace_for "${yaml}" "my ctx")"
+  cluster="$(kube_cluster_for "${yaml}" "my ctx")"
+  names="$(kube_list_contexts "${yaml}")"
+
+  # Assert
+  [[ "${ctx}" == "my ctx" ]] || false
+  [[ "${ns}" == "team ns" ]] || false
+  [[ "${cluster}" == "my cluster" ]] || false
+  [[ "${names}" == "my ctx" ]]
+}
+
+@test "kube.sh - a nested extensions name is not a context" {
+  # Arrange
+  local yaml
+  yaml=$(cat <<'YAML'
+contexts:
+- context:
+    cluster: c
+    extensions:
+    - name: ext-entry
+      extension: {}
+  name: real-ctx
+YAML
+)
+
+  # Act
+  local names
+  names="$(kube_list_contexts "${yaml}")"
+
+  # Assert
+  [[ "${names}" == "real-ctx" ]]
+}

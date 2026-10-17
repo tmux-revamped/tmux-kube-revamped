@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - With several KUBECONFIG files, the first file that sets current-context now
   wins, as kubectl resolves it. The 1.1.0 rule of the last one winning could show
   a context kubectl was not using.
+- Context entries are parsed whole, so a name written before its context
+  block, a quoted name with spaces, and a nested extensions list all
+  resolve correctly.
 
 ## [1.1.0] - 2026-06-29
 
