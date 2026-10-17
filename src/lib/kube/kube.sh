@@ -14,7 +14,7 @@ _KUBE_REVAMPED_LOADED=1
 # holds several current-context lines (one per KUBECONFIG file), the last
 # non-empty value wins, matching how a colon-separated KUBECONFIG is resolved.
 kube_current_context() {
-  printf '%s\n' "${1}" | awk '/^current-context:/ { v=$2; gsub(/"/, "", v); if (v != "") last=v } END { print last }'
+  printf '%s\n' "${1}" | awk '/^current-context:/ { v=$2; gsub(/"/, "", v); if (v != "") { print v; exit } }'
 }
 
 # kube_namespace_for YAML CONTEXT -> the namespace of CONTEXT, "default" when the

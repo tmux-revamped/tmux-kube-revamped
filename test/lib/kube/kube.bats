@@ -36,16 +36,36 @@ teardown() {
   [[ -z "$(kube_current_context "apiVersion: v1")" ]]
 }
 
-@test "kube.sh - kube_current_context takes the last non-empty across files" {
+@test "kube.sh - kube_current_context takes the first non-empty across files" {
+  # Arrange
   local merged
   merged=$(printf 'current-context: first\n\ncurrent-context: second\n')
-  [[ "$(kube_current_context "${merged}")" == "second" ]]
+
+  # Act
+  local got
+  got="$(kube_current_context "${merged}")"
+
+  # Assert
+  [[ "${got}" == "first" ]]
 }
 
 @test "kube.sh - kube_current_context ignores an empty later value" {
   local merged
   merged=$(printf 'current-context: keep\n\ncurrent-context: ""\n')
   [[ "$(kube_current_context "${merged}")" == "keep" ]]
+}
+
+@test "kube.sh - kube_current_context skips an empty earlier value" {
+  # Arrange
+  local merged
+  merged=$(printf 'current-context: ""\n\ncurrent-context: later\n')
+
+  # Act
+  local got
+  got="$(kube_current_context "${merged}")"
+
+  # Assert
+  [[ "${got}" == "later" ]]
 }
 
 @test "kube.sh - kube_namespace_for reads the namespace of a context" {
@@ -121,7 +141,8 @@ YAML
   [[ "${output}" == "${HOME}/.kube/config" ]]
 }
 
-@test "kube.sh - _kube_config_text merges every file with last context winning" {
+@test "kube.sh - _kube_config_text merges every file with first context winning" {
+  # Arrange
   local f1 f2
   f1="${TEST_TMPDIR}/one.yaml"
   f2="${TEST_TMPDIR}/two.yaml"
@@ -140,11 +161,15 @@ contexts:
 current-context: b-ctx
 YAML
   export KUBECONFIG="${f1}:${f2}"
+
+  # Act
   local yaml
   yaml="$(_kube_config_text)"
-  [[ "$(kube_current_context "${yaml}")" == "b-ctx" ]]
-  kube_context_exists "${yaml}" "a-ctx"
-  kube_context_exists "${yaml}" "b-ctx"
+
+  # Assert
+  [[ "$(kube_current_context "${yaml}")" == "a-ctx" ]] || false
+  kube_context_exists "${yaml}" "a-ctx" || false
+  kube_context_exists "${yaml}" "b-ctx" || false
   [[ "$(kube_namespace_for "${yaml}" "a-ctx")" == "a-ns" ]]
 }
 

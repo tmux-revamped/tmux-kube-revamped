@@ -108,7 +108,7 @@ The popup needs `k9s` and tmux 3.2+. The switchers and namespace probes need
 
 ## Compatibility
 
-Works on every tmux version TPM supports, 1.9 and up, on Linux (x86_64 and arm64) and macOS (Intel and Apple Silicon). It reads every file in `$KUBECONFIG` (the full colon-separated list, last current-context winning) and falls back to `~/.kube/config`.
+Works on every tmux version TPM supports, 1.9 and up, on Linux (x86_64 and arm64) and macOS (Intel and Apple Silicon). It reads every file in `$KUBECONFIG` (the full colon-separated list, first non-empty current-context winning as kubectl does) and falls back to `~/.kube/config`.
 
 ## Development
 
