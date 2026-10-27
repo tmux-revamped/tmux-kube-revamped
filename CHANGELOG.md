@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-10-27
+
+### Fixed
+
+- A plugin directory whose path holds a space or an `&` broke every status-line
+  placeholder: `/bin/sh` split the path at the space and backgrounded the
+  command at the `&`, and bash 5.2 replaced the `&` with the placeholder. The
+  path is now shell-quoted.
+
 ## [2.0.0] - 2026-10-17
 
 ### Changed
