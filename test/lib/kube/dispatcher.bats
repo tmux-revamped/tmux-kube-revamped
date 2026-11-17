@@ -159,10 +159,16 @@ YAML
 }
 
 @test "kube.sh dispatcher - popup opens k9s" {
+  # Arrange
   _kube_tmux_version_string() { echo "tmux 3.3"; }
   _tmux() { printf '%s\n' "$*"; }
   main refresh
+  has_command() { return 0; }
+
+  # Act
   run main popup
+
+  # Assert
   [[ "${output}" == *"display-popup"* ]]
   [[ "${output}" == *"k9s --context prod-ctx --namespace web"* ]]
 }

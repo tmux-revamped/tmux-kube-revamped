@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The popup key did nothing where `k9s` is not installed: the popup opened and
+  closed at once. It now names the missing command in a message.
+- The context menu, the namespace menu and the popup ended in silence with
+  nothing to show. Each now says why: no context in the kubeconfig, no
+  namespace from kubectl, or no current context yet.
+
 ## [2.0.2] - 2026-11-17
 
 ### Fixed

@@ -96,7 +96,7 @@ set -g @kube_revamped_menu_namespace_key 'M-n'
 set -g @kube_revamped_popup_key 'K'
 ```
 
-命名空間選單在按鍵時向叢集查詢命名空間，因此會在 kubectl 回應或 2 秒請求逾時之後才開啟。選擇其中一個會執行 `kubectl config set-context --current --namespace`。彈出視窗針對快取中的上下文執行 `k9s --context <context> --namespace <namespace>`。
+命名空間選單在按鍵時向叢集查詢命名空間，因此會在 kubectl 回應或 2 秒請求逾時之後才開啟。選擇其中一個會執行 `kubectl config set-context --current --namespace`。彈出視窗針對快取中的上下文執行 `k9s --context <context> --namespace <namespace>`。沒有內容可顯示的按鍵會以一則 tmux 訊息說明原因：kubeconfig 中沒有上下文、kubectl 沒有列出命名空間、尚未有目前的上下文，或彈出視窗的指令未安裝。
 
 `src/kube.sh doctor` 會列出 kubectl 及 k9s 是否已安裝、每個 kubeconfig 檔案是否可讀，以及目前上下文是否在 kubeconfig 中缺失。
 

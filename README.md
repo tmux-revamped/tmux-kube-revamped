@@ -96,7 +96,7 @@ set -g @kube_revamped_menu_namespace_key 'M-n'
 set -g @kube_revamped_popup_key 'K'
 ```
 
-The namespace menu asks the cluster for its namespaces when you press the key, so it opens once kubectl answers or its 2-second request timeout passes. Picking one runs `kubectl config set-context --current --namespace`. The popup runs `k9s --context <context> --namespace <namespace>` for the cached context.
+The namespace menu asks the cluster for its namespaces when you press the key, so it opens once kubectl answers or its 2-second request timeout passes. Picking one runs `kubectl config set-context --current --namespace`. The popup runs `k9s --context <context> --namespace <namespace>` for the cached context. A key with nothing to show says why in a tmux message: no context in the kubeconfig, no namespace from kubectl, no current context yet, or a popup command that is not installed.
 
 `src/kube.sh doctor` prints whether kubectl and k9s are installed, whether each kubeconfig file is readable, and whether the current context is missing from the kubeconfig.
 

@@ -76,7 +76,10 @@ kube_menu_context() {
   while IFS= read -r name; do
     args+=("$(_kube_hash_escape "${name}")" "" "$(_kube_run_shell_command "${self}" use-context "${name}")")
   done < <(kube_list_contexts "${yaml}")
-  [[ ${#args[@]} -le 3 ]] && return 0
+  if [[ ${#args[@]} -le 3 ]]; then
+    _tmux display-message "kube-revamped: the kubeconfig holds no context"
+    return 0
+  fi
   _tmux "${args[@]}"
 }
 
@@ -87,21 +90,36 @@ kube_menu_namespace() {
     [[ -z "${name}" ]] && continue
     args+=("$(_kube_hash_escape "${name}")" "" "$(_kube_run_shell_command "${self}" use-namespace "${name}")")
   done < <(kube_list_namespaces)
-  [[ ${#args[@]} -le 3 ]] && return 0
+  if [[ ${#args[@]} -le 3 ]]; then
+    _tmux display-message "kube-revamped: kubectl listed no namespace"
+    return 0
+  fi
   _tmux "${args[@]}"
 }
 
 kube_popup() {
-  local cached ctx ns width height cmd full
-  kube_version_ge "$(kube_tmux_version)" 3.2 || return 0
+  local cached ctx ns width height cmd full program shown
+  if ! kube_version_ge "$(kube_tmux_version)" 3.2; then
+    _tmux display-message "kube-revamped: the popup needs tmux 3.2 or later"
+    return 0
+  fi
   cached="$(cache_get value)"
   ns=""
   [[ "${cached}" == *"|"* ]] && ns="${cached#*|}"
   ctx="${cached%%|*}"
-  [[ -z "${ctx}" ]] && return 0
+  if [[ -z "${ctx}" ]]; then
+    _tmux display-message "kube-revamped: no current context to open"
+    return 0
+  fi
   width="$(get_tmux_option "@kube_revamped_popup_width" "80%")"
   height="$(get_tmux_option "@kube_revamped_popup_height" "80%")"
   cmd="$(get_tmux_option "@kube_revamped_popup_command" "k9s")"
+  program="${cmd%% *}"
+  if ! has_command "${program}"; then
+    shown="$(printf '%s\n' "${program}" | sed 's/#/##/g')"
+    _tmux display-message "kube-revamped: ${shown} is not installed"
+    return 0
+  fi
   full="${cmd} --context $(_kube_hash_free "${ctx}")"
   [[ -n "${ns}" ]] && full="${full} --namespace $(_kube_hash_free "${ns}")"
   _tmux display-popup -E -w "${width}" -h "${height}" "${full}"

@@ -13,7 +13,7 @@ Guidance for anyone, human or agent, changing tmux-kube-revamped. What it is and
 | [`src/lib/kube/`](src/lib/kube) | This member's modules |
 | [`src/lib/utils/constants.sh`](src/lib/utils/constants.sh) | This member's constants, including its version |
 | [`src/lib/utils/`](src/lib/utils), [`src/lib/tmux/`](src/lib/tmux) | The shared library. Every file there except `constants.sh` is identical in every member |
-| [`test/`](test) | The bats suite. `helpers.bash` and `tmux_helpers.bash` are identical in every member; this member's own mocks go in the `_local` files |
+| [`test/`](test) | The bats suite. `helpers.bash` and `tmux_helpers.bash` are identical in every member; this member's own mocks go in the `_local` files. [`test/entry/keys.bats`](test/entry/keys.bats) presses the three keys through a second tmux attached to a private server, with a kubeconfig and stand-ins for `kubectl` and `k9s` |
 
 ## Names
 
@@ -26,7 +26,7 @@ Guidance for anyone, human or agent, changing tmux-kube-revamped. What it is and
 ## Behaviour
 
 - Shows the current Kubernetes context and namespace in the status line, parsed from kubeconfig without kubectl.
-- `M-k` opens the context menu.
+- `M-k` opens the context menu; the namespace menu and the popup have opt-in keys. A key with nothing to show says why in a tmux message, never ends in silence: no context, no namespace from kubectl, no current context, or a popup command that is not installed, which would open a popup that closes at once.
 - Each placeholder becomes a `#()` call that reads the cache from tmux server options; a cache older than `@kube_revamped_interval` starts a detached worker.
 
 ## Domain rules
@@ -42,7 +42,7 @@ Guidance for anyone, human or agent, changing tmux-kube-revamped. What it is and
 
 ## Gaps against FAMILY.md
 
-As of 2026-11-16:
+As of 2026-11-17:
 
 - Every script is bash, under `#!/usr/bin/env bash`, not POSIX `sh`, so it is untested under `dash`, `zsh` and BusyBox `sh`.
 - The code lives in [`src/`](src) and [`src/lib/`](src/lib); there is no `bin/kube-revamped`, `lib/state.sh` or `lib/core.sh`.
@@ -56,4 +56,3 @@ As of 2026-11-16:
 - The version is written by hand and released by `tests.yml`; there is no semantic-release, `package.json`, `release.yml` with `recover`, `bot-merge.yml` or Renovate.
 - CI is `tests.yml` and `security.yml`, not `ci.yml`, and no job starts with `step-security/harden-runner`.
 - No `.editorconfig`, `.yamllint.yml` or shfmt; the Makefile has `help`, `test`, `test-unit`, `coverage`, `lint` and `clean`, not the family's targets.
-- No test presses its keys through a real client attached from a second tmux.

@@ -96,7 +96,7 @@ set -g @kube_revamped_menu_namespace_key 'M-n'
 set -g @kube_revamped_popup_key 'K'
 ```
 
-名前空間メニューはキーを押した時点でクラスターに名前空間を問い合わせるため、kubectl が応答するか、2 秒のリクエストタイムアウトが過ぎた後に開きます。1 つを選ぶと `kubectl config set-context --current --namespace` が実行されます。ポップアップは、キャッシュされたコンテキストに対して `k9s --context <context> --namespace <namespace>` を実行します。
+名前空間メニューはキーを押した時点でクラスターに名前空間を問い合わせるため、kubectl が応答するか、2 秒のリクエストタイムアウトが過ぎた後に開きます。1 つを選ぶと `kubectl config set-context --current --namespace` が実行されます。ポップアップは、キャッシュされたコンテキストに対して `k9s --context <context> --namespace <namespace>` を実行します。表示するものがないキーは、その理由を tmux のメッセージで伝えます。kubeconfig にコンテキストがない、kubectl が名前空間を返さない、現在のコンテキストがまだない、ポップアップのコマンドがインストールされていない、のいずれかです。
 
 `src/kube.sh doctor` は、kubectl と k9s がインストールされているか、各 kubeconfig ファイルが読み取れるか、現在のコンテキストが kubeconfig に存在しないかを表示します。
 

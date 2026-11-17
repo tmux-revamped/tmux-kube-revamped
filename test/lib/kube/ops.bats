@@ -21,6 +21,7 @@ current-context: prod-ctx
 YAML
   }
   _kube_tmux_version_string() { echo "tmux 3.3"; }
+  has_command() { return 0; }
 }
 
 teardown() {
@@ -128,11 +129,16 @@ make_arg_printer() {
   [[ "${output}" == *"run-shell '${SELF} use-context dev-ctx'"* ]]
 }
 
-@test "ops.sh - kube_menu_context emits nothing with no contexts" {
+@test "ops.sh - kube_menu_context says so when the kubeconfig holds no context" {
+  # Arrange
   _kube_config_text() { echo "apiVersion: v1"; }
   _tmux() { printf '%s\n' "$*"; }
+
+  # Act
   run kube_menu_context "${SELF}"
-  [[ -z "${output}" ]]
+
+  # Assert
+  [[ "${output}" == "display-message kube-revamped: the kubeconfig holds no context" ]]
 }
 
 @test "ops.sh - kube_menu_namespace builds a namespace menu" {
@@ -149,11 +155,16 @@ make_arg_printer() {
   [[ "${output}" == *"run-shell '${SELF} use-namespace web'"* ]]
 }
 
-@test "ops.sh - kube_menu_namespace emits nothing with no namespaces" {
+@test "ops.sh - kube_menu_namespace says so when kubectl lists no namespace" {
+  # Arrange
   _kubectl() { printf ''; }
   _tmux() { printf '%s\n' "$*"; }
+
+  # Act
   run kube_menu_namespace "${SELF}"
-  [[ -z "${output}" ]]
+
+  # Assert
+  [[ "${output}" == "display-message kube-revamped: kubectl listed no namespace" ]]
 }
 
 @test "ops.sh - kube_popup opens k9s pinned to context and namespace" {
@@ -172,18 +183,42 @@ make_arg_printer() {
   [[ "${output}" != *"--namespace"* ]]
 }
 
-@test "ops.sh - kube_popup is a no-op below tmux 3.2" {
+@test "ops.sh - kube_popup says it needs tmux 3.2 below it" {
+  # Arrange
   _kube_tmux_version_string() { echo "tmux 3.1"; }
   set_tmux_option "@kube_revamped_value" "prod-ctx|web"
   _tmux() { printf '%s\n' "$*"; }
+
+  # Act
   run kube_popup
-  [[ -z "${output}" ]]
+
+  # Assert
+  [[ "${output}" == "display-message kube-revamped: the popup needs tmux 3.2 or later" ]]
 }
 
-@test "ops.sh - kube_popup is a no-op with no context" {
+@test "ops.sh - kube_popup says so with no current context" {
+  # Arrange
   _tmux() { printf '%s\n' "$*"; }
+
+  # Act
   run kube_popup
-  [[ -z "${output}" ]]
+
+  # Assert
+  [[ "${output}" == "display-message kube-revamped: no current context to open" ]]
+}
+
+@test "ops.sh - kube_popup names a command that is not installed instead of opening a popup that closes at once" {
+  # Arrange
+  set_tmux_option "@kube_revamped_value" "prod-ctx|web"
+  set_tmux_option "@kube_revamped_popup_command" "lens#2 --all"
+  has_command() { return 1; }
+  _tmux() { printf '%s\n' "$*"; }
+
+  # Act
+  run kube_popup
+
+  # Assert
+  [[ "${output}" == "display-message kube-revamped: lens##2 is not installed" ]]
 }
 
 @test "ops.sh - kube_popup honors a custom command and size" {
