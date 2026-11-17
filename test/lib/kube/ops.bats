@@ -197,6 +197,26 @@ make_arg_printer() {
   [[ "${output}" == *"k9s -A --context prod-ctx --namespace web"* ]]
 }
 
+@test "ops.sh - kube_popup keeps a hash of the context and the namespace out of the command" {
+  # Arrange
+  local printer="${TEST_TMPDIR}/bin/k9s"
+  make_arg_printer "${printer}"
+  set_tmux_option "@kube_revamped_value" "it's #1; \$(touch x) q|a#b"
+  set_tmux_option "@kube_revamped_popup_command" "${printer}"
+  _tmux() { printf '%s\n' "${!#}"; }
+
+  # Act
+  run kube_popup
+
+  # Assert
+  [[ "${output}" != *"#"* ]] || false
+  run /bin/sh -c "${output}"
+  [[ "${lines[0]}" == "[--context]" ]] || false
+  [[ "${lines[1]}" == "[it's #1; \$(touch x) q]" ]] || false
+  [[ "${lines[2]}" == "[--namespace]" ]] || false
+  [[ "${lines[3]}" == "[a#b]" ]]
+}
+
 @test "ops.sh - kube_apply_keys binds only the context switcher to M-k by default" {
   # Arrange
   _tmux() { printf '%s\n' "$*"; }

@@ -49,6 +49,17 @@ _kube_shell_words() {
   printf '%s' "${out}"
 }
 
+_kube_hash_free() {
+  local rest="${1}" out="" piece hash="#"
+  while [[ "${rest}" == *"${hash}"* ]]; do
+    printf -v piece '%q' "${rest%%"${hash}"*}"
+    out+="${piece}\"\$(printf '%b' '\\0043')\""
+    rest="${rest#*"${hash}"}"
+  done
+  printf -v piece '%q' "${rest}"
+  printf '%s%s' "${out}" "${piece}"
+}
+
 _kube_tmux_quote() {
   local quote="'" escaped="'\\''"
   printf "'%s'" "${1//"${quote}"/${escaped}}"
@@ -91,8 +102,8 @@ kube_popup() {
   width="$(get_tmux_option "@kube_revamped_popup_width" "80%")"
   height="$(get_tmux_option "@kube_revamped_popup_height" "80%")"
   cmd="$(get_tmux_option "@kube_revamped_popup_command" "k9s")"
-  full="${cmd} --context $(printf '%q' "${ctx}")"
-  [[ -n "${ns}" ]] && full="${full} --namespace $(printf '%q' "${ns}")"
+  full="${cmd} --context $(_kube_hash_free "${ctx}")"
+  [[ -n "${ns}" ]] && full="${full} --namespace $(_kube_hash_free "${ns}")"
   _tmux display-popup -E -w "${width}" -h "${height}" "${full}"
 }
 

@@ -57,4 +57,3 @@ As of 2026-11-16:
 - CI is `tests.yml` and `security.yml`, not `ci.yml`, and no job starts with `step-security/harden-runner`.
 - No `.editorconfig`, `.yamllint.yml` or shfmt; the Makefile has `help`, `test`, `test-unit`, `coverage`, `lint` and `clean`, not the family's targets.
 - No test presses its keys through a real client attached from a second tmux.
-- The popup command quotes the context and the namespace with `printf '%q'`, which leaves a `#` in a popup's command when either holds one; that runs on tmux 3.6 and 3.8, which expand no format there, and is not the hash-free form.
