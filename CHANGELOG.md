@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-11-17
+
+### Fixed
+
+- The k9s popup wrote a `#` of the context or the namespace into the popup
+  command as it was, which a tmux that expands formats there reads as a
+  format. The command now writes each `#` through `printf '%b'`, so it reads
+  the same on every tmux version.
+
 ## [2.0.1] - 2026-10-27
 
 ### Fixed
