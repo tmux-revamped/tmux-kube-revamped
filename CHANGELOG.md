@@ -1,5 +1,27 @@
 # Changelog
 
+# [3.0.0](https://github.com/tmux-revamped/tmux-kube-revamped/compare/v2.0.2...v3.0.0) (2026-11-18)
+
+
+* feat!: rewrite the plugin in POSIX sh ([6656f70](https://github.com/tmux-revamped/tmux-kube-revamped/commit/6656f701ae2372f91df0daa874572ccbb5ed03b5)), closes [y-#S](https://github.com/y-/issues/S) [Desk#S](https://github.com/Desk/issues/S)
+
+
+### Bug Fixes
+
+* say why a key has nothing to show ([39a56af](https://github.com/tmux-revamped/tmux-kube-revamped/commit/39a56af8a84a33baaddf95ae3120aa3c9e049fa2))
+
+
+### BREAKING CHANGES
+
+* the script moved from src/kube.sh to bin/kube-revamped,
+so a status line or a binding that calls src/kube.sh by hand must call
+bin/kube-revamped status NAME or the matching command. The options that
+held the time of each cached value, @kube_revamped_dangling_ts,
+_cluster_ts, _user_ts, _reach_ts, _nodes_ts and _pods_ts, are no longer
+written; @kube_revamped_value_ts holds the time of the reading. bash is
+no longer required. A tmux option set to nothing now means its default,
+where it used to stay empty.
+
 All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
