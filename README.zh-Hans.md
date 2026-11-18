@@ -4,64 +4,50 @@
 
 <strong>在 tmux 状态栏中显示当前的 Kubernetes 上下文和命名空间，不依赖 kubectl，直接解析 kubeconfig。</strong>
 
-[English](README.md) | [日本語](README.ja.md) | 简体中文 | [繁體中文（香港）](README.zh-HK.md)
+[English](README.md) &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; 简体中文 &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
 
-[![family](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-kube-revamped/family.yml?branch=main&style=flat-square&label=family)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/family.yml)
-[![tests](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-kube-revamped/tests.yml?branch=main&style=flat-square&label=tests)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-kube-revamped/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/tmux-revamped/tmux-kube-revamped?style=flat-square&label=release)](https://github.com/tmux-revamped/tmux-kube-revamped/releases/latest)
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/tmux-revamped/tmux-kube-revamped?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/tmux-revamped/tmux-kube-revamped)
 [![license](https://img.shields.io/github/license/tmux-revamped/tmux-kube-revamped?style=flat-square&label=license)](LICENSE)
 
 <p align="center">
-  <a href="#功能">功能</a> |
-  <a href="#环境要求">环境要求</a> |
-  <a href="#安装">安装</a> |
-  <a href="#用法">用法</a> |
-  <a href="#配置">配置</a> |
-  <a href="#按键绑定">按键绑定</a> |
-  <a href="#工作原理">工作原理</a> |
-  <a href="#开发">开发</a>
+  <a href="#快速开始"><strong>快速开始</strong></a> &nbsp;|&nbsp;
+  <a href="#用法">用法</a> &nbsp;|&nbsp;
+  <a href="#工作原理">工作原理</a> &nbsp;|&nbsp;
+  <a href="#界面">界面</a>
 </p>
 
 </div>
+
+<p align="center">
+  <img src="screens/hero.gif" alt="kube-revamped 在状态栏中显示上下文，从菜单切换上下文和命名空间，开启探测，并打开弹窗" width="800">
+</p>
+
+```console
+$ kube-revamped refresh
+Refreshed. The context is staging in the namespace payments.
+$ kube-revamped status kube
+#[fg=blue]staging:payments#[default]
+```
 
 **3** 个状态占位符、**2** 个切换菜单和一个 k9s 弹出窗口，默认的状态段从不启动 kubectl。
 
 ---
 
-## 功能
+## 快速开始
 
-在状态行中放入 `#{kube}`，即可显示当前的上下文和命名空间，例如 `prod-ctx:web`。插件用 awk 解析 kubeconfig，因此在未安装 kubectl 的主机上，状态段同样可以工作。
+### 前提条件
 
-| 占位符 | 输出 |
-|:------------|:-------|
-| `#{kube}` | 带样式的状态段：上下文、可选的 `@cluster`、`:namespace`、可选的用户，以及已启用的健康徽章 |
-| `#{kube_context}` | 仅当前上下文名称 |
-| `#{kube_namespace}` | 仅当前命名空间，上下文未设置命名空间时为 `default` |
+| 工具 | 版本 | 用途 |
+|:-----|:--------|:---------|
+| tmux | 3.2 或更高 | 家族的最低版本，弹窗也需要它 |
+| kubeconfig | 任意 | `$KUBECONFIG` 中的每个文件，或 `~/.kube/config`：上下文、命名空间、集群和用户 |
+| `kubectl` | 可选 | 命名空间菜单、切换和探测 |
+| [k9s](https://k9scli.io) | 可选 | 弹窗，或 `@kube_revamped_popup_command` 中设置的任何程序 |
+| gum | 可选 | `kube-revamped` 的菜单、表格和颜色；没有它，所有命令都输出纯文本 |
 
-未设置当前上下文时，状态段为空。如果当前上下文在 kubeconfig 中找不到对应条目，则以 `@kube_revamped_warn_color` 显示，并在其后附加 `@kube_revamped_warn_icon`，而不显示命名空间。
-
-三个健康徽章都需要手动开启，因为每个徽章都会调用集群：
-
-| 徽章 | 探测 | 显示内容 |
-|:------|:------|:------|
-| 可达性 | `kubectl cluster-info` | 有响应时显示绿色 `o`，无响应时显示红色 `x` |
-| 节点 | `kubectl get nodes` | 就绪数与总数，例如 `3/3`；全部就绪时为绿色，否则为警告色 |
-| Pod | 当前命名空间中的 `kubectl get pods` | 警告色的 `!N`，N 为既不是 `Running` 也不是 `Completed` 的 Pod 数；为零时隐藏 |
-
-## 环境要求
-
-| 要求 | 版本或说明 |
-|:------------|:----------------|
-| tmux | 3.2 或更高版本 |
-| bash | 3.2 或更高版本，因此 macOS 的 `/bin/bash` 可以使用 |
-| kubeconfig | `$KUBECONFIG` 中的每个文件，未设置时为 `~/.kube/config` |
-| kubectl，可选 | 用于切换菜单和健康徽章 |
-| [k9s](https://k9scli.io)，可选 | 用于弹出窗口，也可以是 `@kube_revamped_popup_command` 中设置的任意命令 |
-
-CI 在使用 GNU coreutils 和 uutils coreutils 的 Linux x86_64 与 arm64 上，以及在使用系统 BSD 工具、GNU coreutils 和 uutils coreutils 的 macOS Apple Silicon 与 Intel 上运行测试套件。
-
-## 安装
+### 安装
 
 使用 [TPM](https://github.com/tmux-plugins/tpm) 时，将插件添加到 `~/.tmux.conf`，然后按 `prefix + I`：
 
@@ -81,7 +67,33 @@ run-shell ~/.tmux/plugins/tmux-kube-revamped/kube-revamped.tmux
 
 请在插件加载之前设置 `status-left` 或 `status-right`，因为入口脚本在运行时会替换这两个选项中的占位符。
 
+在克隆的目录中运行 `make install`，还会把 `kube-revamped` 放进 `~/.local/bin`，把它的 man 手册和补全放在 `~/.local/share` 下。
+
+### 验证
+
+```bash
+~/.tmux/plugins/tmux-kube-revamped/bin/kube-revamped doctor
+```
+
 ## 用法
+
+在状态行中放入 `#{kube}`，即可显示当前的上下文和命名空间，例如 `prod-ctx:web`。插件用 awk 解析 kubeconfig，因此在未安装 kubectl 的主机上，状态段同样可以工作。
+
+| 占位符 | 输出 |
+|:------------|:-------|
+| `#{kube}` | 带样式的状态段：上下文、可选的 `@cluster`、`:namespace`、可选的用户，以及已启用的健康徽章 |
+| `#{kube_context}` | 仅当前上下文名称 |
+| `#{kube_namespace}` | 仅当前命名空间，上下文未设置命名空间时为 `default` |
+
+未设置当前上下文时，状态段为空。如果当前上下文在 kubeconfig 中找不到对应条目，则以 `@kube_revamped_warn_color` 显示，并在其后附加 `@kube_revamped_warn_icon`，而不显示命名空间。
+
+三个健康徽章都需要手动开启，因为每个徽章都会调用集群：
+
+| 徽章 | 探测 | 显示内容 |
+|:------|:------|:------|
+| 可达性 | `kubectl cluster-info` | 有响应时显示绿色 `o`，无响应时显示红色 `x` |
+| 节点 | `kubectl get nodes` | 就绪数与总数，例如 `3/3`；全部就绪时为绿色，否则为警告色 |
+| Pod | 当前命名空间中的 `kubectl get pods` | 警告色的 `!N`，N 为既不是 `Running` 也不是 `Completed` 的 Pod 数；为零时隐藏 |
 
 ```tmux
 set -g status-right '#{kube} | %H:%M'
@@ -98,7 +110,21 @@ set -g @kube_revamped_popup_key 'K'
 
 命名空间菜单在按键时向集群查询命名空间，因此会在 kubectl 响应或 2 秒请求超时之后打开。选择其中一个会运行 `kubectl config set-context --current --namespace`。弹出窗口针对缓存中的上下文运行 `k9s --context <context> --namespace <namespace>`。没有内容可显示的按键会用一条 tmux 消息说明原因：kubeconfig 中没有上下文、kubectl 没有列出命名空间、尚无当前上下文，或弹出窗口的命令未安装。
 
-`src/kube.sh doctor` 会输出 kubectl 和 k9s 是否已安装、每个 kubeconfig 文件是否可读，以及当前上下文是否在 kubeconfig 中缺失。
+| 命令 | 作用 |
+|:--------|:-------------|
+| `kube-revamped apply` | 立即绑定按键并替换占位符；插件加载时入口点会运行它 |
+| `kube-revamped list` | 打印 `apply` 会发送的每条命令，不做任何修改；`--json` 输出一个对象 |
+| `kube-revamped status NAME` | 打印一个占位符：`kube`、`context` 或 `namespace`；状态栏会运行它 |
+| `kube-revamped refresh` | 立即读取 kubeconfig，并说明读到的内容 |
+| `kube-revamped use-context NAME` | 把 kubectl 切换到某个上下文 |
+| `kube-revamped use-namespace NAME` | 设置当前上下文的命名空间 |
+| `kube-revamped menu-context` | 在 tmux 中打开上下文菜单 |
+| `kube-revamped menu-namespace` | 在 tmux 中打开命名空间菜单 |
+| `kube-revamped popup` | 针对当前上下文打开弹窗程序 |
+| `kube-revamped doctor` | 每个依赖一行，包括每个 kubeconfig 文件、当前上下文、`kubectl`、弹窗程序和保持不动的按键 |
+| `kube-revamped version` | 版本，然后是 tmux 版本 |
+| `kube-revamped help` | 帮助页；`man kube-revamped` 记录相同的命令和设置 |
+| `kube-revamped` | 在终端上显示菜单 |
 
 ## 配置
 
@@ -125,6 +151,8 @@ set -g @kube_revamped_popup_key 'K'
 | `@kube_revamped_probe_nodes` | `0` | 设为 `1` 时开启节点徽章 |
 | `@kube_revamped_probe_pods` | `0` | 设为 `1` 时开启 Pod 徽章 |
 
+每个选项也可以用带连字符的命令选项（例如 `--interval 30`）和环境变量（例如 `KUBE_REVAMPED_INTERVAL`）设置；命令行优先于环境变量，环境变量优先于 tmux 选项。空的 tmux 选项表示使用默认值。传给 `apply` 的选项会随每个绑定、每个菜单项和每次状态调用一起生效。
+
 ### 内部状态
 
 以下选项由插件自行管理，请勿设置。
@@ -140,7 +168,7 @@ set -g @kube_revamped_popup_key 'K'
 | `@kube_revamped_pods` | 既未运行也未完成的 Pod 数 |
 | `@kube_revamped_value_lock` | 后台刷新运行期间为 `1` |
 
-每个选项还有一个带 `_ts` 后缀的配套选项，例如 `@kube_revamped_value_ts`，保存写入时的 Unix 时间。
+`@kube_revamped_value_ts` 保存写入读数时的 Unix 时间，`@kube_revamped_value_lock_ts` 保存取得锁时的 Unix 时间。
 
 ## 按键绑定
 
@@ -156,11 +184,13 @@ set -g @kube_revamped_popup_key 'K'
 set -g @kube_revamped_menu_context_key 'off'
 ```
 
+<a id="工作原理"></a>
+
 ## 工作原理
 
 ```mermaid
 graph LR
-    A[状态栏渲染] --> B[src/kube.sh]
+    A[状态栏渲染] --> B[bin/kube-revamped]
     B --> C{缓存是否新鲜}
     C -->|是| D[tmux 选项]
     C -->|否| E[后台工作进程]
@@ -171,23 +201,95 @@ graph LR
     D --> H[状态段]
 ```
 
-入口脚本 [`kube-revamped.tmux`](kube-revamped.tmux) 把 `status-left` 和 `status-right` 中的每个占位符替换为调用 [`src/kube.sh`](src/kube.sh) 的 `#()`，然后绑定按键。每次调用都从 tmux 服务器选项中读取缓存。缓存比 `@kube_revamped_interval` 更旧时，调用会启动一个脱离的工作进程并立即返回，因此渲染从不等待，也不会写入临时文件。
+入口脚本 [`kube-revamped.tmux`](kube-revamped.tmux) 把 `status-left` 和 `status-right` 中的每个占位符替换为调用 [`bin/kube-revamped`](bin/kube-revamped) 的 `#()`，然后绑定按键。每次调用都从 tmux 服务器选项中读取缓存。缓存比 `@kube_revamped_interval` 更旧时，调用会启动一个脱离的工作进程并立即返回，因此渲染从不等待，也不会写入临时文件。
 
-工作进程按顺序读取 `$KUBECONFIG` 中的每个文件，与 kubectl 一样采用找到的第一个 `current-context`，并在 [`src/lib/kube/kube.sh`](src/lib/kube/kube.sh) 中解析 `contexts:` 列表。[`src/lib/kube/cluster.sh`](src/lib/kube/cluster.sh) 中的每个 kubectl 探测仅在对应选项为 `1` 时运行，带有 2 秒请求超时和 5 秒硬性上限。上下文和命名空间名称在传入菜单、弹出窗口或按键绑定之前，会经过 shell 引用，并将 `#` 字符加倍。
+工作进程按顺序读取 `$KUBECONFIG` 中的每个文件，与 kubectl 一样采用找到的第一个 `current-context`，并在 [`lib/kubeconfig.awk`](lib/kubeconfig.awk) 中解析 `contexts:` 列表。[`lib/kube.sh`](lib/kube.sh) 中的每个 kubectl 探测仅在对应选项为 `1` 时运行，带有 2 秒请求超时和 5 秒硬性上限。上下文和命名空间名称在传入菜单、弹出窗口或按键绑定之前，会经过 shell 引用，并将 `#` 字符加倍。
+
+<a id="界面"></a>
+
+## 界面
+
+<details>
+<summary>所有界面，在真实的 tmux 中用 <code>make screens</code> 录制，每个按键显示在状态栏上</summary>
+<br>
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src="screens/context.png" alt="kube-revamped：状态栏中的上下文和命名空间"><br><sub>状态栏中的上下文和命名空间，来自 <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/context-menu.png" alt="kube-revamped：prefix M-k 打开上下文菜单"><br><sub><code>prefix M-k</code> 打开上下文菜单，来自 <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/production.png" alt="kube-revamped：选择上下文即可切换，包含 @kube_revamped_prod_pattern 的上下文显示为红色"><br><sub>选择上下文即可切换，包含 <code>@kube_revamped_prod_pattern</code> 的上下文显示为红色，来自 <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/namespace-menu.png" alt="kube-revamped：命名空间键 prefix M-n 打开命名空间菜单"><br><sub>命名空间键 <code>prefix M-n</code> 打开命名空间菜单，来自 <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/namespace.png" alt="kube-revamped：选择命名空间即可设置"><br><sub>选择命名空间即可设置，来自 <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/probes.png" alt="kube-revamped：集群和三项探测：是否应答、就绪节点数与总数、失败的 Pod 数"><br><sub>集群和三项探测：是否应答、就绪节点数与总数、失败的 Pod 数，来自 <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/popup.png" alt="kube-revamped：弹窗键 prefix M-p 针对上下文运行弹窗程序"><br><sub>弹窗键 <code>prefix M-p</code> 针对上下文运行弹窗程序，来自 <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/message.png" alt="kube-revamped：未安装的弹窗程序会在消息中指出"><br><sub>未安装的弹窗程序会在消息中指出，来自 <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/list.png" alt="kube-revamped：list 打印每个绑定"><br><sub><code>list</code> 打印每个绑定，来自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/status.png" alt="kube-revamped：status kube 打印状态片段"><br><sub><code>status kube</code> 打印状态片段，来自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/doctor.png" alt="kube-revamped：doctor"><br><sub><code>doctor</code>，来自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/plain-menu.png" alt="kube-revamped：没有 gum 的菜单"><br><sub>没有 gum 的菜单，来自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/plain-doctor.png" alt="kube-revamped：从菜单运行 doctor"><br><sub>从菜单运行 <code>doctor</code>，来自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/version.png" alt="kube-revamped：版本"><br><sub>版本，来自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/error.png" alt="kube-revamped：未知命令"><br><sub>未知命令，来自 <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/accent.png" alt="kube-revamped：来自 KUBE_REVAMPED_ACCENT 的强调色"><br><sub>来自 <code>KUBE_REVAMPED_ACCENT</code> 的强调色，来自 <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/themes.png" alt="kube-revamped：六种主题下的标题"><br><sub>六种主题下的标题，来自 <code>themes.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/help.png" alt="kube-revamped：帮助页"><br><sub>帮助页，来自 <code>help.tape</code></sub></td>
+</tr>
+</table>
+
+录制时，真实的插件、tmux 和 kubectl 运行在专门准备的 kubeconfig 上。集群的应答由一个小脚本给出，弹窗程序是 `pods`。
+
+</details>
+
+## 可移植性
+
+插件是 POSIX `sh`。CI 在下面每一行上运行全部测试。
+
+| Shell | 状态 |
+|:------|:-------|
+| `dash`、macOS 上的 `/bin/sh` | 支持 |
+| `bash` 3.2 和 5.x、系统自带的 `zsh` 和 Homebrew 的 `zsh` | 支持 |
+
+| 系统 | 状态 |
+|:-------|:-------|
+| macOS | Apple Silicon 和 Intel 上的 Tahoe，使用系统自带的工具、Homebrew 的 GNU 工具和 Homebrew 的 uutils |
+| Linux | x86_64 和 arm64 上的 Ubuntu 26.04，使用 GNU coreutils、uutils 和 BusyBox |
 
 ## 开发
 
 | 命令 | 运行内容 |
 |:--------|:-------------|
-| `make test` | [`test/`](test) 下的 bats 测试套件 |
-| `make lint` | 对每个 shell 文件运行 warning 级别的 shellcheck |
-| `make coverage` | 在 Linux 上用 kcov 统计行覆盖率，低于 95% 时失败 |
+| `make fmt` | 对每个脚本运行 shfmt `-i 2` |
+| `make lint` | shfmt、ShellCheck、mandoc、yamllint 和 actionlint，零告警 |
+| `make test` | 在系统 `sh` 下运行 bats 测试 |
+| `make test-all` | 在每个已安装的 shell 下运行测试，macOS 上包括 bash 和 zsh 的两种构建 |
+| `make test-linux` | 在 Ubuntu 容器中运行测试 |
+| `make coverage` | 在这台 Mac 和 Ubuntu 容器中运行 bashcov，合并后以 100% 为门槛 |
+| `make screens` | 用 VHS 在 tmux 中从真实插件录制上面的界面，在 macOS 上运行 |
+| `make install` | 把命令、man 手册和补全安装到 `PREFIX` 下 |
 
-kubeconfig 解析器和徽章渲染函数都是纯函数，用固定的测试文本进行测试。kubectl 和 tmux 位于小型封装函数之后，因此测试不需要集群。
+在 macOS 上，运行 `brew bundle` 会根据 [`Brewfile`](Brewfile) 安装这些目标用到的所有工具。
+
+提交遵循 Conventional Commits 格式，直接进入 `main`。`main` 上的 `ci` 通过后，`release.yml` 运行 semantic-release：自上一个标签以来的每个 `feat` 或 `fix` 都会发布新版本，更新版本常量，并把说明写进 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 许可证
 
-[MIT](LICENSE)，copyright Gustavo Franco.
+[MIT](LICENSE)，copyright Gustavo Franco。
 
 <!-- family:begin -->
 

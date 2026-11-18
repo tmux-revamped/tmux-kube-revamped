@@ -4,64 +4,50 @@
 
 <strong>Current Kubernetes context and namespace in the tmux status bar, parsed from kubeconfig without kubectl.</strong>
 
-English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
+English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](README.zh-Hans.md) &nbsp;|&nbsp; [繁體中文（香港）](README.zh-HK.md)
 
-[![family](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-kube-revamped/family.yml?branch=main&style=flat-square&label=family)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/family.yml)
-[![tests](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-kube-revamped/tests.yml?branch=main&style=flat-square&label=tests)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/tests.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/tmux-revamped/tmux-kube-revamped/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/tmux-revamped/tmux-kube-revamped/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/tmux-revamped/tmux-kube-revamped?style=flat-square&label=release)](https://github.com/tmux-revamped/tmux-kube-revamped/releases/latest)
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/tmux-revamped/tmux-kube-revamped?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/tmux-revamped/tmux-kube-revamped)
 [![license](https://img.shields.io/github/license/tmux-revamped/tmux-kube-revamped?style=flat-square&label=license)](LICENSE)
 
 <p align="center">
-  <a href="#what-it-does">What it does</a> |
-  <a href="#requirements">Requirements</a> |
-  <a href="#installation">Installation</a> |
-  <a href="#usage">Usage</a> |
-  <a href="#configuration">Configuration</a> |
-  <a href="#key-bindings">Key bindings</a> |
-  <a href="#how-it-works">How it works</a> |
-  <a href="#development">Development</a>
+  <a href="#quick-start"><strong>Quick start</strong></a> &nbsp;|&nbsp;
+  <a href="#usage">Usage</a> &nbsp;|&nbsp;
+  <a href="#how-it-works">How it works</a> &nbsp;|&nbsp;
+  <a href="#screens">Screens</a>
 </p>
 
 </div>
+
+<p align="center">
+  <img src="screens/hero.gif" alt="kube-revamped showing the context in the status line, switching the context and the namespace from its menus, turning on the probes and opening the popup" width="800">
+</p>
+
+```console
+$ kube-revamped refresh
+Refreshed. The context is staging in the namespace payments.
+$ kube-revamped status kube
+#[fg=blue]staging:payments#[default]
+```
 
 **3** status placeholders, **2** switcher menus and a k9s popup, and the default segment never starts kubectl.
 
 ---
 
-## What it does
+## Quick start
 
-Put `#{kube}` in your status line and it shows the current context and namespace, such as `prod-ctx:web`. The plugin parses the kubeconfig with awk, so the segment works on a host with no kubectl installed.
+### Prerequisites
 
-| Placeholder | Output |
-|:------------|:-------|
-| `#{kube}` | the styled segment: context, optional `@cluster`, `:namespace`, optional user, and any health badges |
-| `#{kube_context}` | the current context name only |
-| `#{kube_namespace}` | the current namespace only, `default` when the context sets none |
+| Tool | Version | Used for |
+|:-----|:--------|:---------|
+| tmux | 3.2 or later | the family floor, and the popup |
+| kubeconfig | any | every file in `$KUBECONFIG`, or `~/.kube/config`: the context, namespace, cluster and user |
+| `kubectl` | optional | the namespace menu, switching and the probes |
+| [k9s](https://k9scli.io) | optional | the popup, or any program set in `@kube_revamped_popup_command` |
+| gum | optional | the menu, tables and colours of `kube-revamped`; without it every command prints plain text |
 
-The segment is empty when no current context is set. A current context that names no entry in the kubeconfig is shown in `@kube_revamped_warn_color` with `@kube_revamped_warn_icon` after it, instead of a namespace.
-
-Three health badges are opt-in, because each one calls the cluster:
-
-| Badge | Probe | Shows |
-|:------|:------|:------|
-| reachability | `kubectl cluster-info` | a green `o` when it answers, a red `x` when it does not |
-| nodes | `kubectl get nodes` | ready over total, such as `3/3`, green when all are ready and in the warning color otherwise |
-| pods | `kubectl get pods` in the current namespace | `!N` in the warning color, where N counts pods neither `Running` nor `Completed`; hidden at zero |
-
-## Requirements
-
-| Requirement | Version or note |
-|:------------|:----------------|
-| tmux | 3.2 or later |
-| bash | 3.2 or later, so the macOS `/bin/bash` works |
-| kubeconfig | every file in `$KUBECONFIG`, or `~/.kube/config` when it is unset |
-| kubectl, optional | for the switchers and the health badges |
-| [k9s](https://k9scli.io), optional | for the popup, or any command set in `@kube_revamped_popup_command` |
-
-CI runs the suite on Linux x86_64 and arm64 with GNU and uutils coreutils, and on macOS Apple Silicon and Intel with the system BSD tools, GNU coreutils and uutils coreutils.
-
-## Installation
+### Install
 
 With [TPM](https://github.com/tmux-plugins/tpm), add the plugin to `~/.tmux.conf` and press `prefix + I`:
 
@@ -81,7 +67,33 @@ run-shell ~/.tmux/plugins/tmux-kube-revamped/kube-revamped.tmux
 
 Set `status-left` or `status-right` before the plugin loads, because the entrypoint replaces the placeholders in those two options when it runs.
 
+`make install` in the clone also puts `kube-revamped` in `~/.local/bin`, with its man page and completions under `~/.local/share`.
+
+### Verify
+
+```bash
+~/.tmux/plugins/tmux-kube-revamped/bin/kube-revamped doctor
+```
+
 ## Usage
+
+Put `#{kube}` in your status line and it shows the current context and namespace, such as `prod-ctx:web`. The plugin parses the kubeconfig with awk, so the segment works on a host with no kubectl installed.
+
+| Placeholder | Output |
+|:------------|:-------|
+| `#{kube}` | the styled segment: context, optional `@cluster`, `:namespace`, optional user, and any health badges |
+| `#{kube_context}` | the current context name only |
+| `#{kube_namespace}` | the current namespace only, `default` when the context sets none |
+
+The segment is empty when no current context is set. A current context that names no entry in the kubeconfig is shown in `@kube_revamped_warn_color` with `@kube_revamped_warn_icon` after it, instead of a namespace.
+
+Three health badges are opt-in, because each one calls the cluster:
+
+| Badge | Probe | Shows |
+|:------|:------|:------|
+| reachability | `kubectl cluster-info` | a green `o` when it answers, a red `x` when it does not |
+| nodes | `kubectl get nodes` | ready over total, such as `3/3`, green when all are ready and in the warning color otherwise |
+| pods | `kubectl get pods` in the current namespace | `!N` in the warning color, where N counts pods neither `Running` nor `Completed`; hidden at zero |
 
 ```tmux
 set -g status-right '#{kube} | %H:%M'
@@ -98,7 +110,21 @@ set -g @kube_revamped_popup_key 'K'
 
 The namespace menu asks the cluster for its namespaces when you press the key, so it opens once kubectl answers or its 2-second request timeout passes. Picking one runs `kubectl config set-context --current --namespace`. The popup runs `k9s --context <context> --namespace <namespace>` for the cached context. A key with nothing to show says why in a tmux message: no context in the kubeconfig, no namespace from kubectl, no current context yet, or a popup command that is not installed.
 
-`src/kube.sh doctor` prints whether kubectl and k9s are installed, whether each kubeconfig file is readable, and whether the current context is missing from the kubeconfig.
+| Command | What it does |
+|:--------|:-------------|
+| `kube-revamped apply` | Binds the keys and fills the placeholders now; the entry point runs it when tmux loads the plugin |
+| `kube-revamped list` | Prints every command `apply` would send and changes nothing; `--json` prints one object |
+| `kube-revamped status NAME` | Prints one placeholder, `kube`, `context` or `namespace`; the status line runs it |
+| `kube-revamped refresh` | Reads the kubeconfig now and says what it found |
+| `kube-revamped use-context NAME` | Switches kubectl to a context |
+| `kube-revamped use-namespace NAME` | Sets the namespace of the current context |
+| `kube-revamped menu-context` | Opens the context menu in tmux |
+| `kube-revamped menu-namespace` | Opens the namespace menu in tmux |
+| `kube-revamped popup` | Opens the popup program on the current context |
+| `kube-revamped doctor` | One row per dependency: each kubeconfig file, the current context, `kubectl`, the popup program and any key left alone |
+| `kube-revamped version` | The version, then the tmux version |
+| `kube-revamped help` | The help page; `man kube-revamped` documents the same commands and settings |
+| `kube-revamped` | On a terminal, a menu |
 
 ## Configuration
 
@@ -125,6 +151,8 @@ The namespace menu asks the cluster for its namespaces when you press the key, s
 | `@kube_revamped_probe_nodes` | `0` | `1` turns on the nodes badge |
 | `@kube_revamped_probe_pods` | `0` | `1` turns on the pods badge |
 
+Every option is also a command option with dashes, such as `--interval 30`, and an environment variable, such as `KUBE_REVAMPED_INTERVAL`; the command line wins over the environment, and the environment over the tmux option. An empty tmux option means its default. One given to `apply` rides on every binding, every menu item and every status call.
+
 ### Internal state
 
 The plugin manages these options itself. Do not set them.
@@ -140,7 +168,7 @@ The plugin manages these options itself. Do not set them.
 | `@kube_revamped_pods` | the count of pods that are neither running nor completed |
 | `@kube_revamped_value_lock` | `1` while a background refresh runs |
 
-Each of these also has a `_ts` companion, such as `@kube_revamped_value_ts`, holding the Unix time it was written.
+`@kube_revamped_value_ts` holds the Unix time the reading was written, and `@kube_revamped_value_lock_ts` the time the lock was taken.
 
 ## Key bindings
 
@@ -156,11 +184,13 @@ Each of these also has a `_ts` companion, such as `@kube_revamped_value_ts`, hol
 set -g @kube_revamped_menu_context_key 'off'
 ```
 
+<a id="how-it-works"></a>
+
 ## How it works
 
 ```mermaid
 graph LR
-    A[status render] --> B[src/kube.sh]
+    A[status render] --> B[bin/kube-revamped]
     B --> C{cache fresh}
     C -->|yes| D[tmux options]
     C -->|no| E[background worker]
@@ -171,19 +201,91 @@ graph LR
     D --> H[segment]
 ```
 
-The entrypoint [`kube-revamped.tmux`](kube-revamped.tmux) replaces each placeholder in `status-left` and `status-right` with a `#()` call to [`src/kube.sh`](src/kube.sh), then binds the keys. Each call reads the cache from tmux server options. When the cache is older than `@kube_revamped_interval`, the call starts a detached worker and returns at once, so the render never waits and no temp file is written.
+The entrypoint [`kube-revamped.tmux`](kube-revamped.tmux) replaces each placeholder in `status-left` and `status-right` with a `#()` call to [`bin/kube-revamped`](bin/kube-revamped), then binds the keys. Each call reads the cache from tmux server options. When the cache is older than `@kube_revamped_interval`, the call starts a detached worker and returns at once, so the render never waits and no temp file is written.
 
-The worker reads every file in `$KUBECONFIG` in order, takes the first `current-context` it finds as kubectl does, and parses the `contexts:` list in [`src/lib/kube/kube.sh`](src/lib/kube/kube.sh). Each kubectl probe in [`src/lib/kube/cluster.sh`](src/lib/kube/cluster.sh) runs only when its option is `1`, with a 2-second request timeout and a hard 5-second limit. Context and namespace names are shell-quoted and their `#` characters doubled before they reach a menu, a popup or a key binding.
+The worker reads every file in `$KUBECONFIG` in order, takes the first `current-context` it finds as kubectl does, and parses the `contexts:` list in [`lib/kubeconfig.awk`](lib/kubeconfig.awk). Each kubectl probe in [`lib/kube.sh`](lib/kube.sh) runs only when its option is `1`, with a 2-second request timeout and a hard 5-second limit. Context and namespace names are shell-quoted and their `#` characters doubled before they reach a menu, a popup or a key binding.
+
+<a id="screens"></a>
+
+## Screens
+
+<details>
+<summary>Every screen, recorded inside a real tmux with <code>make screens</code>, with each key on the status line</summary>
+<br>
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src="screens/context.png" alt="kube-revamped: The context and its namespace in the status line"><br><sub>The context and its namespace in the status line, from <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/context-menu.png" alt="kube-revamped: prefix M-k opens the context menu"><br><sub><code>prefix M-k</code> opens the context menu, from <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/production.png" alt="kube-revamped: Choosing a context switches to it, and one holding @kube_revamped_prod_pattern turns red"><br><sub>Choosing a context switches to it, and one holding <code>@kube_revamped_prod_pattern</code> turns red, from <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/namespace-menu.png" alt="kube-revamped: prefix M-n, the namespace key, opens the namespace menu"><br><sub><code>prefix M-n</code>, the namespace key, opens the namespace menu, from <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/namespace.png" alt="kube-revamped: Choosing a namespace sets it"><br><sub>Choosing a namespace sets it, from <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/probes.png" alt="kube-revamped: The cluster and the three probes: it answers, ready nodes over all, failing pods"><br><sub>The cluster and the three probes: it answers, ready nodes over all, failing pods, from <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/popup.png" alt="kube-revamped: prefix M-p, the popup key, runs the popup program on the context"><br><sub><code>prefix M-p</code>, the popup key, runs the popup program on the context, from <code>hero.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/message.png" alt="kube-revamped: A popup program that is not installed is named in a message"><br><sub>A popup program that is not installed is named in a message, from <code>hero.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/list.png" alt="kube-revamped: list prints every binding"><br><sub><code>list</code> prints every binding, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/status.png" alt="kube-revamped: status kube prints the segment"><br><sub><code>status kube</code> prints the segment, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/doctor.png" alt="kube-revamped: doctor"><br><sub><code>doctor</code>, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/plain-menu.png" alt="kube-revamped: The menu without gum"><br><sub>The menu without gum, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/plain-doctor.png" alt="kube-revamped: doctor from the menu"><br><sub><code>doctor</code> from the menu, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/version.png" alt="kube-revamped: The version"><br><sub>The version, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/error.png" alt="kube-revamped: An unknown command"><br><sub>An unknown command, from <code>stills.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/accent.png" alt="kube-revamped: An accent from KUBE_REVAMPED_ACCENT"><br><sub>An accent from <code>KUBE_REVAMPED_ACCENT</code>, from <code>stills.tape</code></sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="screens/themes.png" alt="kube-revamped: The header in six themes"><br><sub>The header in six themes, from <code>themes.tape</code></sub></td>
+<td width="50%" valign="top"><img src="screens/help.png" alt="kube-revamped: The help page"><br><sub>The help page, from <code>help.tape</code></sub></td>
+</tr>
+</table>
+
+The recordings run the real plugin, tmux and kubectl on a kubeconfig made for them. A small script answers for the cluster, and `pods` is the popup program.
+
+</details>
+
+## Portability
+
+The plugin is POSIX `sh`. CI runs every suite on each row below.
+
+| Shell | Status |
+|:------|:-------|
+| `dash`, `/bin/sh` on macOS | Supported |
+| `bash` 3.2 and 5.x, the system's `zsh` and Homebrew's | Supported |
+
+| System | Status |
+|:-------|:-------|
+| macOS | Tahoe on Apple Silicon and Intel, with the tools it ships, Homebrew's GNU tools and Homebrew's uutils |
+| Linux | Ubuntu 26.04 on x86_64 and arm64, with GNU coreutils, uutils and BusyBox |
 
 ## Development
 
 | Command | What it runs |
 |:--------|:-------------|
-| `make test` | the bats suite under [`test/`](test) |
-| `make lint` | shellcheck at warning severity on every shell file |
-| `make coverage` | kcov line coverage on Linux, failing below 95% |
+| `make fmt` | shfmt `-i 2` on every script |
+| `make lint` | shfmt, ShellCheck, mandoc, yamllint and actionlint, at zero findings |
+| `make test` | The bats suites under the system `sh` |
+| `make test-all` | The suites under every installed shell, both builds of bash and zsh on macOS |
+| `make test-linux` | The suites in an Ubuntu container |
+| `make coverage` | bashcov on this Mac and in the Ubuntu container, merged and gated at 100 percent |
+| `make screens` | The screens above, recorded from the real plugin inside tmux with VHS, on macOS |
+| `make install` | The command, its man page and completions under `PREFIX` |
 
-The kubeconfig parser and the badge renderers are pure functions tested against fixture text. kubectl and tmux sit behind small wrappers, so the tests need no cluster.
+On macOS, `brew bundle` installs every tool these targets call, from the [`Brewfile`](Brewfile).
+
+Commits follow the conventional commit format and go straight to `main`. After a green `ci` run on `main`, `release.yml` runs semantic-release: every `feat` or `fix` since the last tag publishes a release, stamps the version constant and adds the notes to [`CHANGELOG.md`](CHANGELOG.md).
 
 ## License
 

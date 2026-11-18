@@ -1,0 +1,3 @@
+$ kube-revamped
+kube-revamped: no command given. run 'kube-revamped help' for usage.
+exit 1

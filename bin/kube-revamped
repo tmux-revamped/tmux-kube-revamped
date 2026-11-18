@@ -1,0 +1,375 @@
+#!/bin/sh
+[ -n "${ZSH_VERSION:-}" ] && emulate sh
+set -eu
+
+kube_revamped_self="$0"
+case "${kube_revamped_self}" in
+*/*) ;;
+*) kube_revamped_self="$(command -v -- "${kube_revamped_self}")" ;;
+esac
+kube_revamped_lib="$(cd "${kube_revamped_self%/*}/../lib" && pwd)" || exit 1
+
+for kube_revamped_inherited in $(env | sed -n -e 's/^\(REVAMPED_[A-Za-z0-9_]*\)=.*/\1/p' -e 's/^\(KUBE_REVAMPED_[A-Za-z0-9_]*_LOADED\)=.*/\1/p'); do
+  case "${kube_revamped_inherited}" in
+  REVAMPED_TEST_*) continue ;;
+  *) unset "${kube_revamped_inherited}" ;;
+  esac
+done
+
+REVAMPED_LIB="${kube_revamped_lib}"
+# shellcheck source=SCRIPTDIR/../lib/core.sh
+. "${REVAMPED_LIB}/core.sh"
+# shellcheck source=SCRIPTDIR/../lib/kube.sh
+. "${REVAMPED_LIB}/kube.sh"
+
+kube_revamped_interface() {
+  # shellcheck disable=SC2034
+  REVAMPED_UI_NAME=kube-revamped REVAMPED_UI_VERSION="${KUBE_REVAMPED_VERSION}" REVAMPED_UI_TAGLINE="the Kubernetes context and namespace in the status bar"
+  if [ -n "${KUBE_REVAMPED_ACCENT:-}" ]; then
+    # shellcheck disable=SC2034
+    REVAMPED_UI_ACCENT_CHOICE="${KUBE_REVAMPED_ACCENT}" REVAMPED_UI_ACCENT_NAME=KUBE_REVAMPED_ACCENT
+  fi
+  # shellcheck source=SCRIPTDIR/../lib/cli.sh
+  . "${REVAMPED_LIB}/cli.sh"
+  # shellcheck source=SCRIPTDIR/../lib/doctor.sh
+  . "${REVAMPED_LIB}/doctor.sh"
+}
+
+kube_revamped_usage() {
+  kube_revamped_interface
+  revamped_cli_usage_error "$1"
+}
+
+kube_revamped_bad() {
+  kube_revamped_interface
+  revamped_cli_die "$1"
+}
+
+kube_revamped_help() {
+  revamped_cli_help_page <<'HELP'
+kube-revamped - the Kubernetes context and namespace in the status bar
+
+usage:
+  kube-revamped apply                bind the keys and fill the placeholders
+  kube-revamped list                 print what apply would send to tmux
+  kube-revamped status NAME          print one placeholder: kube, context or
+                                     namespace
+  kube-revamped refresh              read the kubeconfig now for the status
+                                     line
+  kube-revamped use-context NAME     switch kubectl to a context
+  kube-revamped use-namespace NAME   set the namespace of the current context
+  kube-revamped menu-context         the context menu, in tmux
+  kube-revamped menu-namespace       the namespace menu, in tmux
+  kube-revamped popup                open the popup command on the current
+                                     context
+  kube-revamped doctor               check this machine
+  kube-revamped version              print the version
+  kube-revamped help                 print this page
+
+keys:
+  --menu-context-key KEY     the prefix key for the context menu, or off
+  --menu-namespace-key KEY   the prefix key for the namespace menu
+  --popup-key KEY            the prefix key for the popup
+
+status line:
+  --interval SECONDS         how long a reading stays fresh
+  --color STYLE              the tmux style of the segment
+  --prod-pattern TEXT        a context holding this text takes --prod-color
+  --prod-color STYLE         the style of a production context
+  --warn-color STYLE         the style of a warning
+  --warn-icon TEXT           the mark after a context the kubeconfig lacks
+  --icon TEXT                text before the segment
+  --hide-default 0|1         1 hides the segment on the context named default
+  --show-cluster 0|1         1 adds @cluster
+  --show-namespace 0|1       0 drops :namespace
+  --show-user 0|1            1 adds (user)
+
+probes:
+  --probe-reach 0|1          1 asks kubectl whether the cluster answers
+  --probe-nodes 0|1          1 shows ready nodes over all nodes
+  --probe-pods 0|1           1 shows the count of pods that are not running
+
+popup:
+  --popup-command COMMAND    the program the popup runs
+  --popup-width SIZE         the width of the popup
+  --popup-height SIZE        the height of the popup
+
+output:
+  --json                     list prints one JSON object
+  --theme NAME               the look: kodougu, catppuccin-mocha,
+                             catppuccin-latte, dracula, nord, gruvbox,
+                             tokyo-night or mono
+
+environment:
+  KUBECONFIG                 the kubeconfig files, separated by colons
+  KUBE_REVAMPED_<SETTING>    the same as the option of that name, such as
+                             KUBE_REVAMPED_INTERVAL for --interval
+  KUBE_REVAMPED_THEME        the look, when --theme is not given
+  KUBE_REVAMPED_ACCENT       a colour such as #CBA6F7 for the accent
+  KODOUGU_THEME              the family look, when neither is given
+  KODOUGU_ACCENT             the family accent, when the tool's is unset
+  NO_COLOR                   turn colour off
+
+tmux options:
+  @kube_revamped_menu_context_key     the context menu key (default M-k)
+  @kube_revamped_menu_namespace_key   the namespace menu key (default none)
+  @kube_revamped_popup_key            the popup key (default none)
+  @kube_revamped_interval             seconds a reading stays fresh
+                                      (default 10)
+  @kube_revamped_color                style of the segment
+                                      (default #[fg=blue])
+  @kube_revamped_prod_pattern         text that marks a production context
+                                      (default none)
+  @kube_revamped_prod_color           style of a production context
+                                      (default #[fg=red])
+  @kube_revamped_warn_color           style of a warning
+                                      (default #[fg=yellow])
+  @kube_revamped_warn_icon            mark of a context the kubeconfig lacks
+                                      (default ?)
+  @kube_revamped_icon                 text before the segment (default none)
+  @kube_revamped_hide_default         1 hides the context named default
+                                      (default 0)
+  @kube_revamped_show_cluster         1 adds @cluster (default 0)
+  @kube_revamped_show_namespace       0 drops :namespace (default 1)
+  @kube_revamped_show_user            1 adds (user) (default 0)
+  @kube_revamped_probe_reach          1 probes the cluster (default 0)
+  @kube_revamped_probe_nodes          1 counts ready nodes (default 0)
+  @kube_revamped_probe_pods           1 counts failing pods (default 0)
+  @kube_revamped_popup_command        the popup's program (default k9s)
+  @kube_revamped_popup_width          the popup's width (default 80%)
+  @kube_revamped_popup_height         the popup's height (default 80%)
+  @revamped_theme                     the family look (default kodougu)
+
+notes:
+  The placeholders #{kube}, #{kube_context} and #{kube_namespace} print the
+  stored reading at once, and start one background reading when it is older
+  than the interval. The context, namespace, cluster and user come from the
+  kubeconfig files themselves, so the status line needs no kubectl. The
+  namespace menu, switching and the probes call kubectl, each probe under a
+  2 second request timeout. A key with nothing to show says why in a tmux
+  message.
+
+examples:
+  kube-revamped status kube
+  kube-revamped use-context staging
+  kube-revamped --prod-pattern prod --show-cluster 1 apply
+  kube-revamped list --json
+HELP
+}
+
+kube_revamped_show_version() {
+  kube_revamped_show_version_tmux=$(tmux -V 2>/dev/null) || kube_revamped_show_version_tmux=missing
+  printf '%s %s\n' kube-revamped "${KUBE_REVAMPED_VERSION}"
+  printf 'tmux: %s\n' "${kube_revamped_show_version_tmux#tmux }"
+}
+
+kube_revamped_doctor_optional() {
+  if revamped_has_command "$1"; then
+    kube_revamped_doctor_optional_path=$(command -v "$1")
+    revamped_doctor_line "$1" ok "${kube_revamped_doctor_optional_path}"
+    return 0
+  fi
+  revamped_doctor_line "$1" warn "$2"
+}
+
+kube_revamped_doctor_files() {
+  kube_revamped_doctor_files_rest="${KUBECONFIG:-${HOME}/.kube/config}:"
+  while [ -n "${kube_revamped_doctor_files_rest}" ]; do
+    kube_revamped_doctor_files_one="${kube_revamped_doctor_files_rest%%:*}"
+    kube_revamped_doctor_files_rest="${kube_revamped_doctor_files_rest#*:}"
+    [ -n "${kube_revamped_doctor_files_one}" ] || continue
+    if [ -f "${kube_revamped_doctor_files_one}" ] && [ -r "${kube_revamped_doctor_files_one}" ]; then
+      revamped_doctor_line kubeconfig ok "${kube_revamped_doctor_files_one}"
+    else
+      revamped_doctor_line kubeconfig warn "${kube_revamped_doctor_files_one} cannot be read"
+    fi
+  done
+}
+
+kube_revamped_doctor_context() {
+  kube_revamped_inspect
+  case "${KUBE_REVAMPED_FOUND}:${KUBE_REVAMPED_CONTEXT}" in
+  *:) revamped_doctor_line context warn "no current-context is set, so the placeholders stay empty" ;;
+  1:*) revamped_doctor_line context ok "${KUBE_REVAMPED_CONTEXT}" ;;
+  *) revamped_doctor_line context warn "${KUBE_REVAMPED_CONTEXT} is not in the kubeconfig" ;;
+  esac
+}
+
+kube_revamped_doctor_keys() {
+  if [ -n "${KUBE_REVAMPED_SKIPPED}" ]; then
+    revamped_doctor_line keys warn "already bound and left alone: ${KUBE_REVAMPED_SKIPPED}"
+    return 0
+  fi
+  revamped_doctor_line keys ok "every key it binds is free or its own"
+}
+
+kube_revamped_doctor() {
+  kube_revamped_plan
+  revamped_doctor_tmux
+  kube_revamped_doctor_files
+  kube_revamped_doctor_context
+  kube_revamped_doctor_optional kubectl "the namespace menu, switching and the probes need it"
+  kube_revamped_doctor_optional "${KUBE_REVAMPED_S_popup_command%% *}" "the popup needs it"
+  kube_revamped_doctor_keys
+  revamped_doctor_gum
+  revamped_doctor_core_tools awk sed tr date
+  revamped_doctor_finish
+  [ "${REVAMPED_DOCTOR_MISSING}" -eq 0 ] || exit 1
+}
+
+kube_revamped_list() {
+  kube_revamped_plan
+  if [ -n "${kube_revamped_json}" ]; then
+    kube_revamped_json
+    return 0
+  fi
+  kube_revamped_lines
+}
+
+kube_revamped_apply_command() {
+  kube_revamped_apply
+  kube_revamped_apply_command_sent=$(kube_revamped_bindings)
+  case "${kube_revamped_apply_command_sent}" in
+  1) printf 'Applied. 1 key is bound.\n' ;;
+  *) printf 'Applied. %s keys are bound.\n' "${kube_revamped_apply_command_sent}" ;;
+  esac
+}
+
+kube_revamped_refresh_command() {
+  kube_revamped_load
+  kube_revamped_refresh
+  [ "${KUBE_REVAMPED_STORED}" = 1 ] || kube_revamped_bad "no tmux server is running, so the reading has nowhere to go"
+  case "${KUBE_REVAMPED_FOUND}:${KUBE_REVAMPED_CONTEXT}" in
+  *:) printf 'Refreshed. No current context is set.\n' ;;
+  1:*) printf 'Refreshed. The context is %s in the namespace %s.\n' "${KUBE_REVAMPED_CONTEXT}" "${KUBE_REVAMPED_NAMESPACE}" ;;
+  *) printf 'Refreshed. The context %s is not in the kubeconfig.\n' "${KUBE_REVAMPED_CONTEXT}" ;;
+  esac
+}
+
+kube_revamped_status_command() {
+  case "${1:-}" in
+  kube | context | namespace) kube_revamped_status "$1" ;;
+  '') kube_revamped_usage "no placeholder given" ;;
+  *) kube_revamped_bad "status must be kube, context or namespace, got: $1" ;;
+  esac
+}
+
+kube_revamped_use() {
+  [ -n "${2:-}" ] || kube_revamped_usage "no $1 given"
+  "kube_revamped_use_$1" "$2"
+}
+
+kube_revamped_start_menu() {
+  revamped_cli_require_terminal
+  kube_revamped_start_menu_choice=$(revamped_cli_menu "Show the current context" "List the bindings" "Apply them now" "Check this machine" "Help")
+  case "${kube_revamped_start_menu_choice}" in
+  "Show the current context") kube_revamped_refresh_command ;;
+  "List the bindings") kube_revamped_list ;;
+  "Apply them now") kube_revamped_apply_command ;;
+  "Check this machine") kube_revamped_doctor ;;
+  *) kube_revamped_help ;;
+  esac
+}
+
+kube_revamped_dispatch() {
+  case "${1:-}" in
+  doctor) kube_revamped_doctor ;;
+  version | --version | -V) kube_revamped_show_version ;;
+  help | --help | -h) kube_revamped_help ;;
+  list) kube_revamped_list ;;
+  "") kube_revamped_start_menu ;;
+  *) revamped_cli_usage_error "unknown command '$1'" ;;
+  esac
+}
+
+kube_revamped_known() {
+  [ "$1" != --theme ] || return 0
+  kube_revamped_known_name=$(kube_revamped_setting_name "$1")
+  [ -n "${kube_revamped_known_name}" ] || kube_revamped_usage "unknown option '$1'"
+}
+
+kube_revamped_set() {
+  kube_revamped_set_upper=$(printf '%s\n' "$1" | tr '[:lower:]' '[:upper:]')
+  export "KUBE_REVAMPED_${kube_revamped_set_upper}=$2"
+}
+
+kube_revamped_option() {
+  kube_revamped_option_name=$(kube_revamped_setting_name "$1")
+  [ -n "${kube_revamped_option_name}" ] || kube_revamped_usage "unknown option '$1'"
+  kube_revamped_set "${kube_revamped_option_name}" "$2"
+}
+
+kube_revamped_check_switch() {
+  case "$2" in
+  0 | 1) return 0 ;;
+  *) kube_revamped_bad "--$1 must be 0 or 1, got: $2" ;;
+  esac
+}
+
+kube_revamped_check() {
+  if [ -n "${KUBE_REVAMPED_INTERVAL+1}" ] && ! revamped_cache_is_number "${KUBE_REVAMPED_INTERVAL}"; then
+    kube_revamped_bad "--interval must be a whole number of seconds, got: ${KUBE_REVAMPED_INTERVAL}"
+  fi
+  kube_revamped_check_switch hide-default "${KUBE_REVAMPED_HIDE_DEFAULT-0}"
+  kube_revamped_check_switch show-cluster "${KUBE_REVAMPED_SHOW_CLUSTER-0}"
+  kube_revamped_check_switch show-namespace "${KUBE_REVAMPED_SHOW_NAMESPACE-0}"
+  kube_revamped_check_switch show-user "${KUBE_REVAMPED_SHOW_USER-0}"
+  kube_revamped_check_switch probe-reach "${KUBE_REVAMPED_PROBE_REACH-0}"
+  kube_revamped_check_switch probe-nodes "${KUBE_REVAMPED_PROBE_NODES-0}"
+  kube_revamped_check_switch probe-pods "${KUBE_REVAMPED_PROBE_PODS-0}"
+}
+
+kube_revamped_main() {
+  kube_revamped_theme="${KUBE_REVAMPED_THEME:-}" kube_revamped_json="" kube_revamped_left=$# kube_revamped_rest=0
+  while [ "${kube_revamped_left}" -gt 0 ]; do
+    kube_revamped_arg="$1"
+    shift
+    kube_revamped_left=$((kube_revamped_left - 1))
+    case "${kube_revamped_rest}:${kube_revamped_arg}" in
+    1:*) set -- "$@" "${kube_revamped_arg}" ;;
+    0:--) kube_revamped_rest=1 ;;
+    0:--json) kube_revamped_json=1 ;;
+    0:-h | 0:-V | 0:--help | 0:--version) set -- "$@" "${kube_revamped_arg}" ;;
+    0:--theme=*) kube_revamped_theme="${kube_revamped_arg#--theme=}" ;;
+    0:--*=*) kube_revamped_option "${kube_revamped_arg%%=*}" "${kube_revamped_arg#*=}" ;;
+    0:--*)
+      kube_revamped_known "${kube_revamped_arg}"
+      [ "${kube_revamped_left}" -gt 0 ] || kube_revamped_usage "option '${kube_revamped_arg}' needs a value"
+      if [ "${kube_revamped_arg}" = --theme ]; then
+        kube_revamped_theme="$1"
+      else
+        kube_revamped_option "${kube_revamped_arg}" "$1"
+      fi
+      shift
+      kube_revamped_left=$((kube_revamped_left - 1))
+      ;;
+    0:-?*) kube_revamped_usage "unknown option '${kube_revamped_arg}'" ;;
+    *) set -- "$@" "${kube_revamped_arg}" ;;
+    esac
+  done
+  kube_revamped_check
+  kube_revamped_run "${kube_revamped_theme}" "$@"
+}
+
+kube_revamped_run() {
+  kube_revamped_run_theme="$1"
+  shift
+  [ -z "${kube_revamped_json}" ] || [ "${1:-}" = list ] || kube_revamped_usage "option '--json' works only with list"
+  case "${1:-}" in
+  apply) kube_revamped_apply ;;
+  status) kube_revamped_status_command "${2:-}" ;;
+  refresh) kube_revamped_refresh_command ;;
+  use-context) kube_revamped_use context "${2:-}" ;;
+  use-namespace) kube_revamped_use namespace "${2:-}" ;;
+  menu-context) kube_revamped_menu_context ;;
+  menu-namespace) kube_revamped_menu_namespace ;;
+  popup) kube_revamped_popup ;;
+  *)
+    kube_revamped_interface
+    revamped_cli_start "${kube_revamped_run_theme}"
+    kube_revamped_dispatch "$@"
+    ;;
+  esac
+}
+
+kube_revamped_main "$@"

@@ -1,0 +1,3 @@
+$ kube-revamped --frobnicate
+kube-revamped: unknown option '--frobnicate'. run 'kube-revamped help' for usage.
+exit 1

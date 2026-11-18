@@ -1,0 +1,215 @@
+.TH KUBE-REVAMPED 1 "2026-11-17" "kube-revamped" "User Commands"
+.SH NAME
+kube-revamped \- the Kubernetes context and namespace in the tmux status bar
+.SH SYNOPSIS
+.B kube-revamped
+.RI [ options ]
+.I command
+.RI [ name ]
+.SH DESCRIPTION
+.B kube-revamped
+shows the current Kubernetes context, its namespace and, when asked, its
+cluster and user in the tmux status line. It reads them from the kubeconfig
+files themselves, every file in KUBECONFIG in order, so the status line needs
+no kubectl. The entry point
+.B kube-revamped.tmux
+runs
+.B apply
+once when tmux loads the plugin, which binds the context menu key and every
+other key that is set, in one tmux call, and replaces the placeholders
+#{kube}, #{kube_context} and #{kube_namespace} in status-left and
+status-right with calls to
+.BR status .
+.PP
+A status call prints the stored reading at once. When that reading is older
+than the interval it starts one reading in the background, so the status line
+never waits. The namespace menu, switching and the probes call kubectl, each
+probe with a 2 second request timeout and stopped after 5 seconds.
+.PP
+A key with nothing to show says why in a tmux message. Run with no command
+on a terminal, the tool offers a menu.
+.SH COMMANDS
+.TP
+.B apply
+Bind the keys and replace the status placeholders now.
+.TP
+.B list
+Print every tmux command apply would send, one per line, and change nothing.
+.TP
+.B status
+Print one placeholder from the stored reading: kube, context or namespace. The status line runs it, and it starts a reading in the background when the stored one is older than the interval.
+.TP
+.B refresh
+Read the kubeconfig now, store the reading for the status line, run the probes that are on, and say what was found.
+.TP
+.B use-context
+Switch kubectl to the named context, then read the kubeconfig again.
+.TP
+.B use-namespace
+Set the namespace of the current context through kubectl, then read the kubeconfig again.
+.TP
+.B menu-context
+Open a tmux menu of every context in the kubeconfig. Choosing one runs use\-context.
+.TP
+.B menu-namespace
+Open a tmux menu of the namespaces kubectl lists. Choosing one runs use\-namespace.
+.TP
+.B popup
+Open the popup program, k9s by default, in a tmux popup on the stored context and namespace.
+.TP
+.B doctor
+Print one row per dependency: tmux, each kubeconfig file, the current context, kubectl, the popup program, the keys it found bound, gum and the core tools. Exits 1 only when a required tool is missing.
+.TP
+.B version
+Print the version, then the tmux version.
+.TP
+.B help
+Print the help page.
+.SH OPTIONS
+.TP
+.B \-\-json
+.B list
+prints one JSON object.
+.TP
+.BI \-\-theme " name"
+Colours of the terminal interface:
+.BR kodougu ,
+.BR catppuccin\-mocha ,
+.BR catppuccin\-latte ,
+.BR dracula ,
+.BR nord ,
+.BR gruvbox ,
+.B tokyo\-night
+or
+.BR mono .
+The default is
+.BR kodougu .
+.TP
+.BI \-\- setting " value"
+Any tmux option below, named with dashes, such as
+.B \-\-interval
+or
+.BR \-\-show\-cluster .
+It also takes the form
+.IR \-\-setting = value ,
+and outranks the environment and the tmux option. Given to
+.BR apply ,
+it rides on every binding, every menu item and every status call.
+.SH ENVIRONMENT
+.TP
+.B KUBECONFIG
+The kubeconfig files, separated by colons. The default is
+.IR ~/.kube/config .
+.TP
+.BI KUBE_REVAMPED_ SETTING
+Any tmux option below in capitals, such as
+.BR KUBE_REVAMPED_INTERVAL .
+It outranks the tmux option.
+.TP
+.B KUBE_REVAMPED_THEME
+The theme when
+.B \-\-theme
+is not given.
+.TP
+.B KUBE_REVAMPED_ACCENT
+A colour such as #CBA6F7 that replaces the accent of the theme.
+.TP
+.B KODOUGU_THEME
+The theme of every kodougu and tmux-revamped tool, when neither
+.B \-\-theme
+nor
+.B KUBE_REVAMPED_THEME
+is set.
+.TP
+.B KODOUGU_ACCENT
+The accent of every kodougu and tmux-revamped tool, when
+.B KUBE_REVAMPED_ACCENT
+is not set.
+.TP
+.B NO_COLOR
+Turns colour off in every theme.
+.SH TMUX OPTIONS
+An empty tmux option means its default. A key set to off binds nothing.
+.TP
+.B @kube_revamped_menu_context_key
+The prefix key that opens the context menu. off binds nothing. The default is M\-k, left alone when someone else holds it.
+.TP
+.B @kube_revamped_menu_namespace_key
+The prefix key that opens the namespace menu. The default is none.
+.TP
+.B @kube_revamped_popup_key
+The prefix key that opens the popup. The default is none.
+.TP
+.B @kube_revamped_interval
+Seconds a reading stays fresh before the status line starts another. The default is 10.
+.TP
+.B @kube_revamped_color
+The tmux style of the segment. The default is #[fg=blue].
+.TP
+.B @kube_revamped_prod_pattern
+A context whose name holds this text takes prod_color. The default is none.
+.TP
+.B @kube_revamped_prod_color
+The tmux style of a production context. The default is #[fg=red].
+.TP
+.B @kube_revamped_warn_color
+The tmux style of a context the kubeconfig lacks, of nodes that are not all ready and of failing pods. The default is #[fg=yellow].
+.TP
+.B @kube_revamped_warn_icon
+The mark after a current context the kubeconfig does not list. The default is a question mark.
+.TP
+.B @kube_revamped_icon
+Text shown before the segment. The default is none.
+.TP
+.B @kube_revamped_hide_default
+1 hides the segment while the context is named default. The default is 0.
+.TP
+.B @kube_revamped_show_cluster
+1 adds @cluster after the context. The default is 0.
+.TP
+.B @kube_revamped_show_namespace
+0 drops :namespace from the segment. The default is 1.
+.TP
+.B @kube_revamped_show_user
+1 adds the user in parentheses. The default is 0.
+.TP
+.B @kube_revamped_probe_reach
+1 runs kubectl cluster\-info on each reading and shows o when the cluster answers and x when it does not. The default is 0.
+.TP
+.B @kube_revamped_probe_nodes
+1 shows ready nodes over all nodes. The default is 0.
+.TP
+.B @kube_revamped_probe_pods
+1 shows the count of pods in the current namespace that neither run nor completed. The default is 0.
+.TP
+.B @kube_revamped_popup_command
+The program the popup runs, with any arguments. It is given \-\-context and \-\-namespace. The default is k9s.
+.TP
+.B @kube_revamped_popup_width
+The width of the popup. The default is 80%.
+.TP
+.B @kube_revamped_popup_height
+The height of the popup. The default is 80%.
+.TP
+.B @revamped_theme
+The theme of every tmux-revamped tool, when nothing else sets one. The default
+is
+.BR kodougu .
+.PP
+The stored reading lives in
+.BR @kube_revamped_value ,
+.BR _value_ts ,
+.BR _value_lock ,
+.BR _dangling ,
+.BR _cluster ,
+.BR _user ,
+.BR _reach ,
+.B _nodes
+and
+.BR _pods .
+.SH EXIT STATUS
+0 on success, 1 on any failure.
+.SH SEE ALSO
+.BR tmux (1),
+.BR kubectl (1),
+.BR gum (1)

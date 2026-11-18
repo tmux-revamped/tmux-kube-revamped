@@ -1,0 +1,109 @@
+$ kube-revamped help
+kube-revamped - the Kubernetes context and namespace in the status bar
+
+usage:
+  kube-revamped apply                bind the keys and fill the placeholders
+  kube-revamped list                 print what apply would send to tmux
+  kube-revamped status NAME          print one placeholder: kube, context or
+                                     namespace
+  kube-revamped refresh              read the kubeconfig now for the status
+                                     line
+  kube-revamped use-context NAME     switch kubectl to a context
+  kube-revamped use-namespace NAME   set the namespace of the current context
+  kube-revamped menu-context         the context menu, in tmux
+  kube-revamped menu-namespace       the namespace menu, in tmux
+  kube-revamped popup                open the popup command on the current
+                                     context
+  kube-revamped doctor               check this machine
+  kube-revamped version              print the version
+  kube-revamped help                 print this page
+
+keys:
+  --menu-context-key KEY     the prefix key for the context menu, or off
+  --menu-namespace-key KEY   the prefix key for the namespace menu
+  --popup-key KEY            the prefix key for the popup
+
+status line:
+  --interval SECONDS         how long a reading stays fresh
+  --color STYLE              the tmux style of the segment
+  --prod-pattern TEXT        a context holding this text takes --prod-color
+  --prod-color STYLE         the style of a production context
+  --warn-color STYLE         the style of a warning
+  --warn-icon TEXT           the mark after a context the kubeconfig lacks
+  --icon TEXT                text before the segment
+  --hide-default 0|1         1 hides the segment on the context named default
+  --show-cluster 0|1         1 adds @cluster
+  --show-namespace 0|1       0 drops :namespace
+  --show-user 0|1            1 adds (user)
+
+probes:
+  --probe-reach 0|1          1 asks kubectl whether the cluster answers
+  --probe-nodes 0|1          1 shows ready nodes over all nodes
+  --probe-pods 0|1           1 shows the count of pods that are not running
+
+popup:
+  --popup-command COMMAND    the program the popup runs
+  --popup-width SIZE         the width of the popup
+  --popup-height SIZE        the height of the popup
+
+output:
+  --json                     list prints one JSON object
+  --theme NAME               the look: kodougu, catppuccin-mocha,
+                             catppuccin-latte, dracula, nord, gruvbox,
+                             tokyo-night or mono
+
+environment:
+  KUBECONFIG                 the kubeconfig files, separated by colons
+  KUBE_REVAMPED_<SETTING>    the same as the option of that name, such as
+                             KUBE_REVAMPED_INTERVAL for --interval
+  KUBE_REVAMPED_THEME        the look, when --theme is not given
+  KUBE_REVAMPED_ACCENT       a colour such as #CBA6F7 for the accent
+  KODOUGU_THEME              the family look, when neither is given
+  KODOUGU_ACCENT             the family accent, when the tool's is unset
+  NO_COLOR                   turn colour off
+
+tmux options:
+  @kube_revamped_menu_context_key     the context menu key (default M-k)
+  @kube_revamped_menu_namespace_key   the namespace menu key (default none)
+  @kube_revamped_popup_key            the popup key (default none)
+  @kube_revamped_interval             seconds a reading stays fresh
+                                      (default 10)
+  @kube_revamped_color                style of the segment
+                                      (default #[fg=blue])
+  @kube_revamped_prod_pattern         text that marks a production context
+                                      (default none)
+  @kube_revamped_prod_color           style of a production context
+                                      (default #[fg=red])
+  @kube_revamped_warn_color           style of a warning
+                                      (default #[fg=yellow])
+  @kube_revamped_warn_icon            mark of a context the kubeconfig lacks
+                                      (default ?)
+  @kube_revamped_icon                 text before the segment (default none)
+  @kube_revamped_hide_default         1 hides the context named default
+                                      (default 0)
+  @kube_revamped_show_cluster         1 adds @cluster (default 0)
+  @kube_revamped_show_namespace       0 drops :namespace (default 1)
+  @kube_revamped_show_user            1 adds (user) (default 0)
+  @kube_revamped_probe_reach          1 probes the cluster (default 0)
+  @kube_revamped_probe_nodes          1 counts ready nodes (default 0)
+  @kube_revamped_probe_pods           1 counts failing pods (default 0)
+  @kube_revamped_popup_command        the popup's program (default k9s)
+  @kube_revamped_popup_width          the popup's width (default 80%)
+  @kube_revamped_popup_height         the popup's height (default 80%)
+  @revamped_theme                     the family look (default kodougu)
+
+notes:
+  The placeholders #{kube}, #{kube_context} and #{kube_namespace} print the
+  stored reading at once, and start one background reading when it is older
+  than the interval. The context, namespace, cluster and user come from the
+  kubeconfig files themselves, so the status line needs no kubectl. The
+  namespace menu, switching and the probes call kubectl, each probe under a
+  2 second request timeout. A key with nothing to show says why in a tmux
+  message.
+
+examples:
+  kube-revamped status kube
+  kube-revamped use-context staging
+  kube-revamped --prod-pattern prod --show-cluster 1 apply
+  kube-revamped list --json
+exit 0

@@ -1,0 +1,50 @@
+#compdef kube-revamped
+
+_kube_revamped() {
+  local -a commands
+  commands=(
+    'apply:bind the keys and fill the status placeholders'
+    'list:print every command apply would send'
+    'status:print one placeholder'
+    'refresh:read the kubeconfig now'
+    'use-context:switch kubectl to a context'
+    'use-namespace:set the namespace of the current context'
+    'menu-context:open the context menu in tmux'
+    'menu-namespace:open the namespace menu in tmux'
+    'popup:open the popup program on the current context'
+    'doctor:check this machine'
+    'version:print the version'
+    'help:print the help page'
+  )
+
+  _arguments \
+    '--json[list prints one JSON object]' \
+    '--theme[colours of the terminal interface]:theme:(kodougu catppuccin-mocha catppuccin-latte dracula nord gruvbox tokyo-night mono)' \
+    '--menu-context-key[key of the context menu]:value:' \
+    '--menu-namespace-key[key of the namespace menu]:value:' \
+    '--popup-key[key of the popup]:value:' \
+    '--interval[seconds a reading stays fresh]:value:' \
+    '--color[style of the segment]:value:' \
+    '--prod-pattern[text that marks a production context]:value:' \
+    '--prod-color[style of a production context]:value:' \
+    '--warn-color[style of a warning]:value:' \
+    '--warn-icon[mark of a context the kubeconfig lacks]:value:' \
+    '--icon[text before the segment]:value:' \
+    '--hide-default[hide the context named default]:value:(0 1)' \
+    '--show-cluster[add the cluster]:value:(0 1)' \
+    '--show-namespace[show the namespace]:value:(0 1)' \
+    '--show-user[add the user]:value:(0 1)' \
+    '--probe-reach[ask whether the cluster answers]:value:(0 1)' \
+    '--probe-nodes[count ready nodes]:value:(0 1)' \
+    '--probe-pods[count failing pods]:value:(0 1)' \
+    '--popup-command[program the popup runs]:value:' \
+    '--popup-width[width of the popup]:value:' \
+    '--popup-height[height of the popup]:value:' \
+    '1:command:->command'
+
+  if [[ "${state}" == command ]]; then
+    _describe 'command' commands
+  fi
+}
+
+_kube_revamped "$@"
