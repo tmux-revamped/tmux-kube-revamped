@@ -592,7 +592,7 @@ kube_revamped_popup() {
     kube_revamped_popup_namespace=$(kube_revamped_literal "${KUBE_REVAMPED_NAMESPACE}")
     kube_revamped_popup_full="${kube_revamped_popup_full} --namespace ${kube_revamped_popup_namespace}"
   fi
-  tmux display-popup -E -w "${KUBE_REVAMPED_S_popup_width}" -h "${KUBE_REVAMPED_S_popup_height}" "${kube_revamped_popup_full}"
+  tmux display-popup -E -w "${KUBE_REVAMPED_S_popup_width}" -h "${KUBE_REVAMPED_S_popup_height}" "${kube_revamped_popup_full}" || :
 }
 
 kube_revamped_plan_keys() {

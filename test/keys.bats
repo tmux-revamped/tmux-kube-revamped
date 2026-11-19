@@ -112,6 +112,23 @@ loaded_with_status() {
   wait_for host_lacks "k9s stand-in running"
 }
 
+@test "keys - Ctrl-C ends the popup program and leaves no error over the pane" {
+  # Arrange
+  setting popup_key P
+  loaded_with_status
+  press C-b P
+  wait_for host_shows "k9s stand-in running"
+
+  # Act
+  press C-c
+
+  # Assert
+  wait_for host_lacks "k9s stand-in running"
+  host_lacks "returned"
+  run tmux display-message -p -t test '#{pane_in_mode}'
+  [[ "${output}" == "0" ]]
+}
+
 @test "keys - the popup key names a program that is not installed" {
   # Arrange
   setting popup_key P
