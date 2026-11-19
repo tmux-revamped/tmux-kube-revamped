@@ -57,9 +57,9 @@ everything() {
   [[ "${before}" == "${after}" ]]
 }
 
-@test "entrypoint - a checkout whose path holds a space, a quote and a hash loads, shows the context and takes its key" {
+@test "entrypoint - a checkout whose path holds a space, a quote, a hash and a percent sign loads, shows the context and takes its key" {
   # Arrange
-  local copy="${BATS_TEST_TMPDIR}/it's #1 plug in"
+  local copy="${BATS_TEST_TMPDIR}/it's #1 50% plug in"
   mkdir -p "${copy}"
   cp -R "${ROOT}/bin" "${ROOT}/lib" "${ROOT}/kube-revamped.tmux" "${copy}/"
   tmux set-option -g status-right '#{kube} end'

@@ -30,7 +30,7 @@ Guidance for anyone, human or agent, changing tmux-kube-revamped. What it is and
 ## Behaviour
 
 - `apply` reads every setting and the stored reading with one `tmux display-message` call and one `env` read, reads the prefix table once, and sends every binding and the replaced status strings in one tmux call. When that call fails, it sends each command alone, so one invalid key leaves the others bound and `apply` exits 1.
-- Each placeholder in `status-left` or `status-right` becomes `#(<tool> status <name>)`, with the tool's path quoted for a shell and every `#` doubled. A string without a placeholder is not written, so loading twice changes nothing.
+- Each placeholder in `status-left` or `status-right` becomes `#(<tool> status <name>)`, with the tool's path quoted for a shell and every `#` and `%` doubled, since tmux reads the status line both as a format and as a time format. A string without a placeholder is not written, so loading twice changes nothing.
 - `status` makes one tmux read and one `date` call, and prints the stored reading at once. Only when that reading is older than `@kube_revamped_interval`, and no reading is under way, does it start one in the background through the shared cache module; a lock older than 20 seconds no longer holds a new reading back.
 - A refresh writes the context, its time, the dangling mark, the cluster and the user in one tmux call, then the probes that are on in a second one.
 - `M-k` opens the context menu; the namespace menu and the popup have opt-in keys. A key set to `off` binds nothing. Only the default key is skipped when someone else holds it, and `doctor` names it; a key the person names is bound whoever holds it. Two actions set to one key bind it for the first and the clash is named.
