@@ -1,5 +1,21 @@
 # Changelog
 
+# [3.1.0](https://github.com/tmux-revamped/tmux-kube-revamped/compare/v3.0.0...v3.1.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* double the percent sign in a status job ([e956f9a](https://github.com/tmux-revamped/tmux-kube-revamped/commit/e956f9a29fbc5b1755e2b89acedaa51a7c21d1c8))
+* fold a table wider than the terminal ([6d304ea](https://github.com/tmux-revamped/tmux-kube-revamped/commit/6d304ea47ad21be021aa5622827d0517f664b17b))
+* leave no error after Ctrl-C in a popup ([0d02fd2](https://github.com/tmux-revamped/tmux-kube-revamped/commit/0d02fd2b037528da908043305ebeea88fe721ae0))
+* read the grep of macOS as bsd in doctor ([d43337a](https://github.com/tmux-revamped/tmux-kube-revamped/commit/d43337adaac79fd653449f10f7658ae4cbc5919e))
+* stop a recording that hangs ([4bdeba3](https://github.com/tmux-revamped/tmux-kube-revamped/commit/4bdeba3df34325b695898f693eee1d84b7532f8b))
+
+
+### Features
+
+* name unknown setting values in doctor ([300b0aa](https://github.com/tmux-revamped/tmux-kube-revamped/commit/300b0aa4c1902489296efdb7d67a32fe32f434e0))
+
 # [3.0.0](https://github.com/tmux-revamped/tmux-kube-revamped/compare/v2.0.2...v3.0.0) (2026-11-18)
 
 
