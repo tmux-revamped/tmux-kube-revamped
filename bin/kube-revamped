@@ -203,6 +203,12 @@ kube_revamped_doctor_keys() {
   revamped_doctor_line keys ok "every key it binds is free or its own"
 }
 
+kube_revamped_doctor_settings() {
+  kube_revamped_doctor_settings_rows=$(kube_revamped_setting_rows)
+  # shellcheck disable=SC2154
+  revamped_doctor_settings "${KUBE_REVAMPED_KINDS}" "${kube_revamped_doctor_settings_rows}"
+}
+
 kube_revamped_doctor() {
   kube_revamped_plan
   revamped_doctor_tmux
@@ -210,6 +216,7 @@ kube_revamped_doctor() {
   kube_revamped_doctor_context
   kube_revamped_doctor_optional kubectl "the namespace menu, switching and the probes need it"
   kube_revamped_doctor_optional "${KUBE_REVAMPED_S_popup_command%% *}" "the popup needs it"
+  kube_revamped_doctor_settings
   kube_revamped_doctor_keys
   revamped_doctor_gum
   revamped_doctor_core_tools awk sed tr date

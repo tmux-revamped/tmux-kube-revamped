@@ -151,7 +151,7 @@ set -g @kube_revamped_popup_key 'K'
 | `@kube_revamped_probe_nodes` | `0` | 設為 `1` 時啟用節點徽章 |
 | `@kube_revamped_probe_pods` | `0` | 設為 `1` 時啟用 Pod 徽章 |
 
-每個選項亦可用帶連字號的命令選項（例如 `--interval 30`）及環境變數（例如 `KUBE_REVAMPED_INTERVAL`）設定；命令列優先於環境變數，環境變數優先於 tmux 選項。空的 tmux 選項表示使用預設值。傳給 `apply` 的選項會隨每個綁定、每個選單項目及每次狀態呼叫一同生效。
+每個選項亦可用帶連字號的命令選項（例如 `--interval 30`）及環境變數（例如 `KUBE_REVAMPED_INTERVAL`）設定；命令列優先於環境變數，環境變數優先於 tmux 選項。空的 tmux 選項表示使用預設值。`doctor` 會指出數值無法識別的設定。傳給 `apply` 的選項會隨每個綁定、每個選單項目及每次狀態呼叫一同生效。
 
 ### 內部狀態
 

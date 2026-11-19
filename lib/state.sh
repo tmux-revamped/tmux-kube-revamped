@@ -91,3 +91,11 @@ KUBE_REVAMPED_LIMIT=10
 KUBE_REVAMPED_TAB='	'
 REVAMPED_CACHE_PREFIX=kube_revamped
 REVAMPED_LOG_NS=kube-revamped
+KUBE_REVAMPED_KINDS='interval	number
+hide_default	1 0
+show_cluster	1 0
+show_namespace	1 0
+show_user	1 0
+probe_reach	1 0
+probe_nodes	1 0
+probe_pods	1 0'

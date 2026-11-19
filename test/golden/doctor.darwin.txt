@@ -4,6 +4,7 @@ kubeconfig         ok       <path>
 context            ok       staging
 kubectl            warn     the namespace menu, switching and the probes need it
 k9s                warn     the popup needs it
+settings           ok       every option holds a value it knows
 keys               ok       every key it binds is free or its own
 gum                ok       <path>
 awk                ok       <path>, <flavor>

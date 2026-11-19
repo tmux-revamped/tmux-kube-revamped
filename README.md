@@ -151,7 +151,7 @@ The namespace menu asks the cluster for its namespaces when you press the key, s
 | `@kube_revamped_probe_nodes` | `0` | `1` turns on the nodes badge |
 | `@kube_revamped_probe_pods` | `0` | `1` turns on the pods badge |
 
-Every option is also a command option with dashes, such as `--interval 30`, and an environment variable, such as `KUBE_REVAMPED_INTERVAL`; the command line wins over the environment, and the environment over the tmux option. An empty tmux option means its default. One given to `apply` rides on every binding, every menu item and every status call.
+Every option is also a command option with dashes, such as `--interval 30`, and an environment variable, such as `KUBE_REVAMPED_INTERVAL`; the command line wins over the environment, and the environment over the tmux option. An empty tmux option means its default. `doctor` names any setting that holds a value the plugin does not know. One given to `apply` rides on every binding, every menu item and every status call.
 
 ### Internal state
 

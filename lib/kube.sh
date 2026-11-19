@@ -40,10 +40,14 @@ kube_revamped_resolve() {
   '
 }
 
+kube_revamped_setting_rows() {
+  kube_revamped_setting_rows_format=$(kube_revamped_format)
+  kube_revamped_setting_rows_live=$(tmux display-message -p "${kube_revamped_setting_rows_format}" 2>/dev/null) || kube_revamped_setting_rows_live=""
+  kube_revamped_resolve "${kube_revamped_setting_rows_live}"
+}
+
 kube_revamped_load() {
-  kube_revamped_load_format=$(kube_revamped_format)
-  kube_revamped_load_live=$(tmux display-message -p "${kube_revamped_load_format}" 2>/dev/null) || kube_revamped_load_live=""
-  kube_revamped_load_values=$(kube_revamped_resolve "${kube_revamped_load_live}")
+  kube_revamped_load_values=$(kube_revamped_setting_rows)
   while IFS='	' read -r kube_revamped_load_name kube_revamped_load_value; do
     IFS= read -r "KUBE_REVAMPED_S_${kube_revamped_load_name}" <<EOF
 ${kube_revamped_load_value}

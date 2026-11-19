@@ -58,7 +58,9 @@ Open a tmux menu of the namespaces kubectl lists. Choosing one runs use\-namespa
 Open the popup program, k9s by default, in a tmux popup on the stored context and namespace.
 .TP
 .B doctor
-Print one row per dependency: tmux, each kubeconfig file, the current context, kubectl, the popup program, the keys it found bound, gum and the core tools. Exits 1 only when a required tool is missing.
+Print one row per dependency: tmux, each kubeconfig file, the current context, kubectl, the popup program, the keys it found bound, gum and the core tools.
+A settings row names any setting whose value it does not know.
+Exits 1 only when a required tool is missing.
 .TP
 .B version
 Print the version, then the tmux version.

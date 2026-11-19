@@ -322,3 +322,15 @@ logged() {
   [[ "${status}" -eq 0 ]]
   [[ "${output}" =~ ${held} ]]
 }
+
+@test "commands - doctor names a tmux option whose value it does not know" {
+  # Arrange
+  option show_user yes
+
+  # Act
+  tool doctor
+
+  # Assert
+  run grep '^settings' <<<"${output}"
+  [[ "${output}" == "settings           warn     unknown values: show_user=yes" ]]
+}
